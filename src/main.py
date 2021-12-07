@@ -27,13 +27,13 @@ def f(x1, x2):
     return x1 + x2
 
 for s in range(steps):
-    U0 = U
+    U0 = U.copy()
     for i in range(n):
         for j in range(m):
             U[i, j] = f(X[i], Y[j])
             for k in range(n):
                 for l in range(m):
                     U[i, j] += A(X[i] - X[k], Y[j] - Y[l]) * U0[k, l] * h_x * h_y
-    print(np.max(U-U0))
+    print(np.sum(np.abs(U-U0)))
     print("\n")
 
