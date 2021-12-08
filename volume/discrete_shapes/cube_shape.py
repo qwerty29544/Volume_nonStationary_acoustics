@@ -1,10 +1,22 @@
 import numpy as np
 import numba
-import matplotlib.pyplot as plt
 
 
-@numba.jit(cache=True, fastmath=True, nogil=True, nopython=True)
-def cube_shape(center_point, hwl_lengths, n_discrete_hwl):
+@numba.jit(cache=True,
+           fastmath=True,
+           nogil=True,
+           nopython=True,
+           parallel=True)
+def cube_shape(center_point,
+               hwl_lengths,
+               n_discrete_hwl):
+    """
+    Функция, которая вычилсяет массив матриц кубиков из большого куба с заданными харакетристиками
+    :param center_point: Массив из 3 чисел, задающий центр кубика
+    :param hwl_lengths: Массив из 3 чисел, задающий высоту (Z), ширину (Y) и длину (X)
+    :param n_discrete_hwl: Массив из 3 чисел, задающий сетку дискретизации каждой из осей XYZ
+    :return: np.array с shape = (n*m*k, 8, 3)
+    """
     # Cube tensor for computations in N^3 x 4 x 3 shape
     cube_tensor = np.zeros((np.prod(n_discrete_hwl), 8, 3))
 
@@ -30,20 +42,4 @@ def cube_shape(center_point, hwl_lengths, n_discrete_hwl):
         upper_matrix = np.concatenate((plane_tensor, np.full((N_2, 4, 1), height[h_index+1])), axis=2)
         cube_tensor[(h_index * N_2):((h_index + 1) * N_2)] = np.concatenate((lower_matrix, upper_matrix), axis=1)
 
-
-
-
     return cube_tensor
-
-if __name__ == "__main__":
-    cube = cube_shape(center_point=np.array([1., 1., 1.]),
-                      hwl_lengths=np.array([1., 2., 3.]),
-                      n_discrete_hwl=np.array([8, 8, 8], dtype=np.int64))
-
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-
-    for i in range(len(cube)):
-        print(cube[i])
-        ax.scatter(cube[i][:, 0], cube[i][:, 1], cube[i][:, 2])
-    plt.show()
