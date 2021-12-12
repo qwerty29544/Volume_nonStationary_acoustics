@@ -67,6 +67,11 @@ def compute_cubes_volume(cube_tensor):
            nopython=True,
            parallel=True)
 def find_cube_neighbors(cube_tensor):
+    """
+    Функция находит соседей для всех кубиков в тензоре разбиения
+    :param cube_tensor: Тензор кубиков резбиений исходной фигуры (n*m*k, 8, 3)
+    :return: cube_neighbors - тензор индексов соседей размером (n*m*k, 6)
+    """
     cube_neighbors = (-1) * np.ones((cube_tensor.shape[0], 6))      # Индексы тензоров соседей по граням
     for cube in range(cube_tensor.shape[0]):
         flag = np.zeros(6)
@@ -74,15 +79,48 @@ def find_cube_neighbors(cube_tensor):
             if np.prod(flag) == 1:
                 break
             else:
-                if cube_tensor[cube][0:4] == cube_tensor[cube_apparent][4:8]:
+                if np.all(cube_tensor[cube][0] == cube_tensor[cube_apparent][4]) and \
+                   np.all(cube_tensor[cube][1] == cube_tensor[cube_apparent][5]) and \
+                   np.all(cube_tensor[cube][2] == cube_tensor[cube_apparent][6]) and \
+                   np.all(cube_tensor[cube][3] == cube_tensor[cube_apparent][7]):
                     flag[0] = 1
                     cube_neighbors[cube][0] = cube_apparent
-                if cube_tensor[cube][4:8] == cube_tensor[cube_apparent][0:4]:
+
+                if np.all(cube_tensor[cube][4] == cube_tensor[cube_apparent][0]) and \
+                   np.all(cube_tensor[cube][5] == cube_tensor[cube_apparent][1]) and \
+                   np.all(cube_tensor[cube][6] == cube_tensor[cube_apparent][2]) and \
+                   np.all(cube_tensor[cube][7] == cube_tensor[cube_apparent][3]):
                     flag[1] = 1
                     cube_neighbors[cube][1] = cube_apparent
-                    # @TODO: Остальные части соседей добить
-                if cube_tensor[cube][4:8] == cube_tensor[cube_apparent][0:4]:
-                    break
+
+                if np.all(cube_tensor[cube][0] == cube_tensor[cube_apparent][2]) and \
+                   np.all(cube_tensor[cube][1] == cube_tensor[cube_apparent][3]) and \
+                   np.all(cube_tensor[cube][4] == cube_tensor[cube_apparent][6]) and \
+                   np.all(cube_tensor[cube][5] == cube_tensor[cube_apparent][7]):
+                    flag[2] = 1
+                    cube_neighbors[cube][2] = cube_apparent
+
+                if np.all(cube_tensor[cube][1] == cube_tensor[cube_apparent][0]) and \
+                   np.all(cube_tensor[cube][3] == cube_tensor[cube_apparent][2]) and \
+                   np.all(cube_tensor[cube][5] == cube_tensor[cube_apparent][4]) and \
+                   np.all(cube_tensor[cube][7] == cube_tensor[cube_apparent][6]):
+                    flag[3] = 1
+                    cube_neighbors[cube][3] = cube_apparent
+
+                if np.all(cube_tensor[cube][2] == cube_tensor[cube_apparent][0]) and \
+                   np.all(cube_tensor[cube][3] == cube_tensor[cube_apparent][1]) and \
+                   np.all(cube_tensor[cube][6] == cube_tensor[cube_apparent][4]) and \
+                   np.all(cube_tensor[cube][7] == cube_tensor[cube_apparent][5]):
+                    flag[4] = 1
+                    cube_neighbors[cube][4] = cube_apparent
+
+                if np.all(cube_tensor[cube][0] == cube_tensor[cube_apparent][1]) and \
+                   np.all(cube_tensor[cube][2] == cube_tensor[cube_apparent][3]) and \
+                   np.all(cube_tensor[cube][4] == cube_tensor[cube_apparent][5]) and \
+                   np.all(cube_tensor[cube][6] == cube_tensor[cube_apparent][7]):
+                    flag[5] = 1
+                    cube_neighbors[cube][5] = cube_apparent
+
     return cube_neighbors
 
 
