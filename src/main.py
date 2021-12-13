@@ -11,9 +11,9 @@ if __name__ == "__main__":
                                 n_discrete_hwl=np.array((10, 10, 10)))
     print(cube_tensor[0])
 
-    cube_tensor_neighbors = CC.find_cube_neighbors(cube_tensor=cube_tensor)
+    #cube_tensor_neighbors = CC.find_cube_neighbors(cube_tensor=cube_tensor)
 
-    print(cube_tensor_neighbors[0])
+    #print(cube_tensor_neighbors[0])
 
     collocations_tensor = CC.compute_collocations(cube_tensor=cube_tensor)
 
@@ -27,3 +27,9 @@ if __name__ == "__main__":
 
     cubes_volume = CC.compute_cubes_volume(cube_tensor=cube_tensor)
     print(np.unique(cubes_volume))
+
+    triag_volume = gmsh.GMSHParser("C:\\Users\\MariaRemark\\PycharmProjects\\Volume_nonStationary_acoustics\\mesh\\cube.msh",
+                                   dims=3).get_numpy()
+
+    print(triag_volume[0])
+    print(triag_volume.shape)

@@ -13,14 +13,14 @@ class GMSHParser:
 
     def _common_parse(self):
         with pygmsh.geo.Geometry() as geom:
-            if self._check_file_type() == 'geo':
+            if self._check_file_type() in ['geo', 'msh']:
                 self._parse_geo_file()
             elif self._check_file_type() == 'stl':
                 self._parse_stl_file()
             else:
                 raise TypeError('Unknown file type')
 
-            geom.generate_mesh(dim=self._dims, verbose=True, algorithm=8)
+            geom.generate_mesh(dim=3, algorithm=8)
 
             self._get_elements()
 
@@ -44,8 +44,17 @@ class GMSHParser:
         gmsh.model.geo.addVolume([l])
 
     def _get_elements(self):
-        idxs = gmsh.model.mesh.getElements()[1][-1]
 
+        elems = gmsh.model.mesh.getElements()
+
+        for i in range(len(elems[1])):
+            if elems[2][i].shape[0] / elems[1][i].shape[0] == self._dims + 1:
+                dim = i
+
+        if dim is None:
+            raise RuntimeError('Incorrect file structure')
+
+        idxs = gmsh.model.mesh.getElements()[1][dim]
         for idx in idxs:
             elem = gmsh.model.mesh.getElement(idx)[1]
             nodes = []
