@@ -28,7 +28,7 @@ def FPI_solver(A_matrix, f_vector, u0_vector=None, eps=10e-7, n_iter=10000):
 
     # Заполнение случайными числами
     if u0_vector is None:
-        u0_vector = np.random.uniform(-1., 1., row_size)
+        u0_vector = np.random.uniform(-1., 1., row_size).reshape((1, row_size))
 
     # Нормировка матрицы для улучшения сходимости задачи
     max_value = max(np.amax(np.abs(A_matrix)), np.amax(np.abs(f_vector)))
@@ -45,8 +45,8 @@ def FPI_solver(A_matrix, f_vector, u0_vector=None, eps=10e-7, n_iter=10000):
     u_vector = u0_vector.copy()
     for iter_idx in range(1, (n_iter + 1)):
         # TODO (N^2 + N) * steps операций
-        u_vector = B_matrix @ u0_vector + f_vector
-        if np.amax(np.abs(u_vector - u0_vector)) < eps:
+        u_vector = np.concatenate((u_vector, (B_matrix @ u_vector[iter_idx - 1] + f_vector).reshape(1, row_size)), 0)
+        if np.amax(np.abs(u_vector[iter_idx] - u_vector[iter_idx - 1])) < eps:
             break
         u0_vector = u_vector.copy()
 
