@@ -1,7 +1,7 @@
 from iterations.FPI.iter_inspector import FPI_solver
 from iterations.OSGD.iter_solver import OSGD_solver
 from iterations.TSGD.iter_solver import TSGD_solver
-from iterations.BiCG.iter_solver import BiCG_solver
+from iterations.BiCG.iter_inspector import BiCG_solver
 from iterations.BiCGstab.iter_solver import BiCGstab_solver
 
 import numpy as np
@@ -15,6 +15,7 @@ if __name__ == "__main__":
     Solve = f / np.diag(A)
     Solve_FPI = FPI_solver(A_matrix=A, f_vector=f)
     Solve_BiCG = BiCG_solver(A_matrix=A, f_vector=f)
+    Solve_BiCGstab = BiCGstab_solver(A_matrix=A, f_vector=f)
 
     print("\n")
     print(Solve)
@@ -25,4 +26,8 @@ if __name__ == "__main__":
     print("\n")
     print(Solve_FPI.shape[0])
     print("\n")
-    print(Solve_BiCG)
+    print(Solve_BiCG[-1])
+    print("\n")
+    print(Solve_BiCG.shape[0])
+    print("\n")
+    print(Solve_BiCGstab)

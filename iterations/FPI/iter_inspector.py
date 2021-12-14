@@ -48,6 +48,5 @@ def FPI_solver(A_matrix, f_vector, u0_vector=None, eps=10e-7, n_iter=10000):
         u_vector = np.concatenate((u_vector, (B_matrix @ u_vector[iter_idx - 1] + f_vector).reshape(1, row_size)), 0)
         if np.amax(np.abs(u_vector[iter_idx] - u_vector[iter_idx - 1])) < eps:
             break
-        u0_vector = u_vector.copy()
 
     return u_vector
