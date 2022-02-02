@@ -3,6 +3,7 @@ from iterations.OSGD.iter_solver import OSGD_solver
 from iterations.TSGD.iter_solver import TSGD_solver
 from iterations.BiCG.iter_inspector import BiCG_solver
 from iterations.BiCGstab.iter_solver import BiCGstab_solver
+from iterations.GMSI.iter_solver import GMSI_inspector, muFind
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +16,9 @@ if __name__ == "__main__":
     Solve = f / np.diag(A)
     Solve_FPI = FPI_solver(A_matrix=A, f_vector=f)
     Solve_BiCG = BiCG_solver(A_matrix=A, f_vector=f)
-    Solve_BiCGstab = BiCGstab_solver(A_matrix=A, f_vector=f)
+    #Solve_BiCGstab = BiCGstab_solver(A_matrix=A, f_vector=f)
+    Solve_GMSI = GMSI_inspector(A_matrix=A, f_vector=f, mu_param=np.real(muFind(np.diag(A) + 0j)[0]))
+
 
     print("\n")
     print(Solve)
@@ -30,4 +33,8 @@ if __name__ == "__main__":
     print("\n")
     print(Solve_BiCG.shape[0])
     print("\n")
-    print(Solve_BiCGstab)
+    #print(Solve_BiCGstab)
+    print("\n")
+    print(Solve_GMSI[-1])
+    print("\n")
+    print(Solve_GMSI.shape[0])
