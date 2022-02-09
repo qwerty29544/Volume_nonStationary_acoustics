@@ -98,8 +98,8 @@ def muFind(lambs):
                 R = _R2(lambs[i], lambs[j])
                 if np.abs(mu) <= np.abs(R):
                     continue
-                np.round_(np.abs(mu - lambs), 8, muresid)
-                np.round_(np.array(np.abs(R)).reshape((1,)), 8, R_resid)
+                np.round_(np.abs(mu - lambs), 10, muresid)
+                np.round_(np.array(np.abs(R)).reshape((1,)), 10, R_resid)
                 if np.any(muresid > R_resid):
                     continue
                 muflash = np.concatenate((muflash, np.array(mu).reshape((1,))), axis=0)
@@ -115,8 +115,8 @@ def muFind(lambs):
                         R = _R3(mu, lambs[i])
                         if np.abs(mu) <= np.abs(R):
                             continue
-                        np.round_(np.abs(mu - lambs), 8, muresid)
-                        np.round_(np.array(np.abs(R)).reshape((1,)), 8, R_resid)
+                        np.round_(np.abs(mu - lambs), 10, muresid)
+                        np.round_(np.array(np.abs(R)).reshape((1,)), 10, R_resid)
                         if np.any(muresid > R_resid):
                             continue
                         muflash = np.concatenate((muflash, np.array(mu).reshape((1,))), axis=0)
@@ -171,6 +171,8 @@ def GMSI_inspector(A_matrix, f_vector, mu_param, u0_vector=None, eps=10e-7, n_it
     # Заполнение случайными числами
     if u0_vector is None:
         u0_vector = np.random.uniform(-1., 1., row_size).reshape((1, row_size))
+    else:
+        u0_vector = u0_vector.reshape((1, row_size))
 
     u_vector = u0_vector.copy()
 

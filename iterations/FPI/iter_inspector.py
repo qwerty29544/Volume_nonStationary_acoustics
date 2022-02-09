@@ -2,10 +2,7 @@ import numpy as np
 import numba
 
 
-@numba.jit(fastmath=True,
-           cache=True,
-           nogil=True,
-           nopython=True)
+@numba.jit()
 def FPI_solver(A_matrix, f_vector, u0_vector=None, eps=10e-7, n_iter=10000):
     """
     Решение операторного уравнения методом простых итераций
@@ -29,6 +26,8 @@ def FPI_solver(A_matrix, f_vector, u0_vector=None, eps=10e-7, n_iter=10000):
     # Заполнение случайными числами
     if u0_vector is None:
         u0_vector = np.random.uniform(-1., 1., row_size).reshape((1, row_size))
+    else:
+        u0_vector = u0_vector.reshape((1, row_size))
 
     # Нормировка матрицы для улучшения сходимости задачи
     max_value = max(np.amax(np.abs(A_matrix)), np.amax(np.abs(f_vector)))

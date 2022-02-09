@@ -2,9 +2,9 @@ import numpy as np
 import numba
 
 
-@numba.jit(cache=True,
-           fastmath=True,
-           nopython=True)
+#@numba.jit(cache=True,
+#           fastmath=True,
+#           nopython=True)
 def BiCG_solver(A_matrix, f_vector, u0_vector=None, eps=10e-7, n_iter=10000):
     if A_matrix.shape[0] != A_matrix.shape[1]:
         print("\n A_matrix is not a square matrix \n")
@@ -16,13 +16,10 @@ def BiCG_solver(A_matrix, f_vector, u0_vector=None, eps=10e-7, n_iter=10000):
     # Заполнение случайными числами
     if u0_vector is None:
         u0_vector = np.random.uniform(-1., 1., row_size).reshape((1, row_size))
+    else:
+        u0_vector = u0_vector.reshape((1, row_size))
 
-    # Нормировка матрицы для улучшения сходимости задачи
-    max_value = max(np.amax(np.abs(A_matrix)), np.amax(np.abs(f_vector)))
 
-    # TODO: 2*N*N операций
-    A_matrix = A_matrix / max_value
-    f_vector = f_vector / max_value
 
     # Инициализация начальных значений итераций
     r = f_vector - A_matrix @ u0_vector[0]
