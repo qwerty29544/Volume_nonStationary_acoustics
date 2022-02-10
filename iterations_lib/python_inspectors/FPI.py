@@ -1,23 +1,31 @@
 import numpy as np
 import numpy.typing as npt
+import iterations_lib.python_inspectors.utils as utils
+from typing import Tuple
 
 
-def FPI_solver(real_matrix: npt.ArrayLike,
-               f_vector: npt.ArrayLike,
-               u0_vector: npt.ArrayLike = None,
+def FPI_solver(real_matrix: np.ndarray,
+               f_vector: np.ndarray,
+               u0_vector: np.ndarray = None,
                eps: float = 10e-7,
-               n_iter: int = 10000) -> npt.ArrayLike:
+               n_iter: int = 10000) -> Tuple[np.ndarray, np.ndarray]:
     """
-
+    Floating point iterations for solving Linear Equations Systems
     :param real_matrix:
+        a matrix from real space "R" with (N, N) dimensions, real_matrix is an operator of equation
     :param f_vector:
+        a vector from real space "R" with (N, ) dimensions, f_vector is an free vector or incoming function
     :param u0_vector:
+        a vector of initial state of unknown vector from "R" with (N, ) dims
     :param eps:
+        wall error between iterations values
     :param n_iter:
+        wall number of iterations in method
     :return:
+        u_vector is an 2D ndarray with iterations in rows and values of coordinates iterations in cols
     """
     # Проверка на квадратную матрицу
-    if real_matrix.shape[0] != real_matrix.shape[1]:
+    if not utils.check_square(real_matrix):
         print("\n A_matrix is not a square matrix \n")
         raise ValueError
 
@@ -42,24 +50,35 @@ def FPI_solver(real_matrix: npt.ArrayLike,
 
     # Итерации
     for iter_index in range(1, n_iter):
+        # Подсчёт вектора на новой итерации
         new_iteration_of_u_vector = B_matrix @ u_vector[iter_index - 1] + f_vector
+        # Приведение к удобной расмерности (1, N)
         new_iteration_of_u_vector = new_iteration_of_u_vector.reshape((1, -1))
+        # Присоединение к истории
         u_vector = np.concatenate((u_vector, new_iteration_of_u_vector), 0)
-        if np.amax(np.abs(u_vector[iter_index] - u_vector[iter_index - 1])) < eps:
+
+        difference = utils.l2_norm(u_vector[iter_index] - u_vector[iter_index - 1]) / utils.l2_norm(f_vector)
+        if difference < eps:
             break
 
-    return u_vector
+    iterations_space = np.array(list(range(len(u_vector))))
+    return u_vector, iterations_space
 
 
 def _main():
-    A_matrix = np.diag(np.array((1, 2, 3, 4, 5)))
+    A_matrix = np.diag(np.array((2, 4, 6, 8, 10)))
     f_vector = np.array((1, 2, 3, 4, 5))
-    solve = FPI_solver(A_matrix, f_vector)
+
+    solve, it_space = FPI_solver(A_matrix, f_vector)
+
     real_solve = f_vector / np.diag(A_matrix)
+
     print("Real_Solve")
     print(real_solve)
     print("\nIterations Solve")
     print(solve[-1])
+    print("\nIterations Space")
+    print(it_space)
     return 0
 
 
