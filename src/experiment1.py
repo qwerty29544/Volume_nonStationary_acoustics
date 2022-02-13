@@ -86,7 +86,7 @@ def main():
     plot_iterations(solve_FPI, iter_space_FPI, color="#FF00FF")
     plot_iterations(np.real(solve_BiCGStab), iter_space_BiCGStab, color="#FF0000")
     plot_iterations(np.real(solve_TwoSGD), it_space_TwoSGD, color="#0000FF")
-    #plot_iterations(np.real(solve_ThreeSGD), it_space_ThreeSGD, color="#FFFF00")
+    plot_iterations(np.real(solve_ThreeSGD), it_space_ThreeSGD, color="#FFFF00")
     plt.xlabel("Количество умножений матрицы на вектор")
     plt.ylabel("Норма вектора решения")
     plt.show()

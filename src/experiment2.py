@@ -41,7 +41,9 @@ def main():
     # Решение FPI --------------------------------
 
     filename_FPI = "ex2_FPI.csv"
-    solve_FPI, iter_space_FPI = FPI.FPI_solver(matrix_h, f, z_0)
+
+    solve_FPI, iter_space_FPI = FPI.FPI_solver(matrix_h, f, z_0, n_iter=1000)
+
     Table_FPI = pd.DataFrame(data=solve_FPI)
     Table_FPI["matrix_multiplications"] = iter_space_FPI
     cols = Table_FPI.columns.tolist()
@@ -52,7 +54,10 @@ def main():
     # Решение BiCGStab ---------------------------
 
     filename_BiCGStab = "ex2_BiCGStab.csv"
-    solve_BiCGStab, iter_space_BiCGStab, _, _, _, _, _, alpha, beta, omega, rho = BiCGStab.BiCGStab_solver(matrix_h, f, z_0)
+
+    solve_BiCGStab, iter_space_BiCGStab, _, _, _, _, _, \
+    alpha, beta, omega, rho = BiCGStab.BiCGStab_solver(matrix_h, f, z_0, n_iter=1000)
+
     Table_BiCGStab = pd.DataFrame(data=solve_BiCGStab)
     Table_BiCGStab['matrix_multiplications'] = iter_space_BiCGStab
     Table_BiCGStab['alpha'] = alpha
@@ -66,7 +71,10 @@ def main():
 
     # Решение TwoSGD -----------------------------
     filename_TwoSGD = "ex2_TwoSGD.csv"
-    solve_TwoSGD, it_space_TwoSGD, _, _, alpha_TwoSGD, gamma_TwoSGD = TwoSGD.TwoSGD_solver(matrix_h, f, z_0)
+
+    solve_TwoSGD, it_space_TwoSGD, _, _, \
+    alpha_TwoSGD, gamma_TwoSGD = TwoSGD.TwoSGD_solver(matrix_h, f, z_0, n_iter=1000)
+
     Table_TwoSGD = pd.DataFrame(data=solve_TwoSGD)
     Table_TwoSGD['matrix_multiplications'] = it_space_TwoSGD
     Table_TwoSGD['alpha'] = alpha_TwoSGD
@@ -78,7 +86,10 @@ def main():
 
     # Решение ThreeSGD ---------------------------
     filename_ThreeSGD = "ex2_ThreeSGD.csv"
-    solve_ThreeSGD, it_space_ThreeSGD, _, _, _, _, alpha_ThreeSGD, beta_ThreeSGD, gamma_ThreeSGD = ThreeSGD.ThreeSGD_solver(matrix_h, f, z_0)
+
+    solve_ThreeSGD, it_space_ThreeSGD, _, _, _, _, alpha_ThreeSGD, \
+    beta_ThreeSGD, gamma_ThreeSGD = ThreeSGD.ThreeSGD_solver(matrix_h, f, z_0, n_iter=1000)
+
     Table_ThreeSGD = pd.DataFrame(data=solve_ThreeSGD)
     Table_ThreeSGD['matrix_multiplications'] = it_space_ThreeSGD
     Table_ThreeSGD['alpha'] = alpha_ThreeSGD
@@ -94,7 +105,7 @@ def main():
     plot_iterations(solve_FPI, iter_space_FPI, color="#FF00FF")
     plot_iterations(np.real(solve_BiCGStab), iter_space_BiCGStab, color="#FF0000")
     plot_iterations(np.real(solve_TwoSGD), it_space_TwoSGD, color="#0000FF")
-    #plot_iterations(np.real(solve_ThreeSGD), it_space_ThreeSGD, color="#FFFF00")
+    plot_iterations(np.real(solve_ThreeSGD), it_space_ThreeSGD, color="#FFFF00")
     plt.xlabel("Количество умножений матрицы на вектор")
     plt.ylabel("Норма вектора решения")
     plt.show()

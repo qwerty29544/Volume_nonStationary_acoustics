@@ -17,7 +17,7 @@ def main():
     # Постановка задачи ---------------------------------
     random.seed(123)
     np.random.seed(123)
-    n = 20
+    n = 2000
     f = np.random.normal(0, 1, 2 * n) + 1j * np.random.normal(0, 1, 2*n)
     half_diag = np.random.uniform(5, 10, n) + 1j * np.random.uniform(0, 2, n)
     other_half = np.conj(half_diag)
