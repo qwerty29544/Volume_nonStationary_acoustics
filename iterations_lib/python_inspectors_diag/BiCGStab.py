@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.typing as npt
-import iterations_lib.python_inspectors.utils as utils
+import iterations_lib.python_inspectors_diag.utils as utils
 from typing import Tuple
 
 
@@ -21,10 +21,6 @@ def BiCGStab_solver(complex_matrix: np.ndarray,
     :param n_iter:
     :return:
     """
-    # Проверка на квадратную матрицу
-    if not utils.check_square(complex_matrix):
-        print("\n A_matrix is not a square matrix \n")
-        raise ValueError
 
     # Инициализация начальной переменной
     if u0_vector is None:
@@ -39,7 +35,7 @@ def BiCGStab_solver(complex_matrix: np.ndarray,
     f_vector = np.array(f_vector, dtype=complex)
 
     r = np.zeros((1, complex_matrix.shape[0]), dtype=complex)
-    r[0] = f_vector - complex_matrix @ u_vector[0]
+    r[0] = f_vector - utils.matrix_diag_prod(complex_matrix, u_vector[0])
 
     r_tild = np.zeros((complex_matrix.shape[0], ), dtype=complex)
     r_tild = r[0].copy()
@@ -66,7 +62,7 @@ def BiCGStab_solver(complex_matrix: np.ndarray,
         new_p = r[iter_index - 1] + beta[iter_index] * (rho[iter_index - 1] - omega[iter_index - 1] * v[iter_index - 1])
         p = np.concatenate((p, new_p.reshape((1, -1))), axis=0)
 
-        new_v = complex_matrix @ p[iter_index]
+        new_v = utils.matrix_diag_prod(complex_matrix, p[iter_index])
         v = np.concatenate((v, new_v.reshape((1, -1))), axis=0)
 
         new_alpha = rho[iter_index] / utils.vec_dot_complex_prod_bicg(r_tild, v[iter_index])
@@ -75,7 +71,7 @@ def BiCGStab_solver(complex_matrix: np.ndarray,
         new_s = r[iter_index - 1] - alpha[iter_index] * v[iter_index]
         s = np.concatenate((s, new_s.reshape((1, -1))), axis=0)
 
-        new_t = complex_matrix @ s[iter_index]
+        new_t = utils.matrix_diag_prod(complex_matrix, s[iter_index])
         t = np.concatenate((t, new_t.reshape((1, -1))), axis=0)
 
         new_omega = utils.vec_dot_real_prod(t[iter_index], s[iter_index]) / \
@@ -98,10 +94,10 @@ def BiCGStab_solver(complex_matrix: np.ndarray,
 
 
 def _main():
-    A_matrix = np.diag(np.array((0.5, 1, 1.5, 2, 2.5)))
+    A_matrix = np.array((0.5, 1, 1.5, 2, 2.5))
     f_vector = np.array((1, 2, 3, 4, 5))
     solve, it_space = BiCGStab_solver(A_matrix, f_vector)[:2]
-    real_solve = f_vector / np.diag(A_matrix)
+    real_solve = f_vector / A_matrix
     print("Real_Solve")
     print(real_solve)
     print("\nIterations Solve")

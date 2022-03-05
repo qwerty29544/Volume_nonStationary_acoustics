@@ -9,12 +9,12 @@ def check_square(matrix):
         return False
 
 
-def vec_dot_complex_prod_bicg(vec1: np.ndarray, vec2: np.ndarray):
-    return np.real(np.conj(vec1).dot(vec2))
-
-
 def vec_dot_complex_prod(vec1: np.ndarray, vec2: np.ndarray):
     return np.real(vec1.dot(np.conj(vec2)))
+
+
+def vec_dot_complex_prod_bicg(vec1: np.ndarray, vec2: np.ndarray):
+    return np.real(np.conj(vec1).dot(vec2))
 
 
 def vec_dot_real_prod(vec1: np.ndarray, vec2: np.ndarray):
@@ -23,3 +23,7 @@ def vec_dot_real_prod(vec1: np.ndarray, vec2: np.ndarray):
 
 def l2_norm(vec):
     return np.sqrt(np.sum(vec**2))
+
+
+def matrix_diag_prod(diag_matrix, vector):
+    return diag_matrix * vector

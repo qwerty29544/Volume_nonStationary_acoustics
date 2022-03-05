@@ -41,8 +41,8 @@ def main():
     random.seed(seed)
 
     cube = cs.cube_shape(center_point=np.array([0, 0, 0]),
-                         hwl_lengths=np.array([2, 2, 2]),
-                         n_discrete_hwl=np.array([16, 16, 16]))
+                         hwl_lengths=np.array([1, 1, 1]),
+                         n_discrete_hwl=np.array([10, 10, 10]))
 
     n = cube.shape[0]
     omega = 1

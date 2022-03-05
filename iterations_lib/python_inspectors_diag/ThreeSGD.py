@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.typing as npt
-import iterations_lib.python_inspectors.utils as utils
+import iterations_lib.python_inspectors_diag.utils as utils
 from typing import Tuple
 
 
@@ -11,10 +11,6 @@ def ThreeSGD_solver(complex_matrix: np.ndarray,
                     n_iter: int = 1000) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
                                                   np.ndarray, np.ndarray, np.ndarray,
                                                   np.ndarray, np.ndarray, np.ndarray]:
-    # Проверка на квадратную матрицу
-    if not utils.check_square(complex_matrix):
-        print("\n A_matrix is not a square matrix \n")
-        raise ValueError
 
     # Инициализация начальной переменной
     if u0_vector is None:
@@ -43,9 +39,9 @@ def ThreeSGD_solver(complex_matrix: np.ndarray,
 
     H_star = np.transpose(np.conj(complex_matrix))
 
-    r[1] = complex_matrix @ u_vector[0] - f_vector
-    g[1] = H_star @ r[1]
-    H_g_0 = complex_matrix @ g[1]
+    r[1] = utils.matrix_diag_prod(complex_matrix, u_vector[0]) - f_vector
+    g[1] = utils.matrix_diag_prod(H_star, r[1])
+    H_g_0 = utils.matrix_diag_prod(complex_matrix, g[1])
     beta[1] = utils.vec_dot_complex_prod(g[1], g[1]) / utils.vec_dot_complex_prod(H_g_0, H_g_0)
 
     u_vector[1] = u_vector[0] - beta[1] * g[1]
@@ -58,10 +54,10 @@ def ThreeSGD_solver(complex_matrix: np.ndarray,
 
     # Вторая итерация ----------------------------------------------------------------------------------
 
-    r[2] = complex_matrix @ u_vector[1] - f_vector
+    r[2] = utils.matrix_diag_prod(complex_matrix, u_vector[1]) - f_vector
     delta_r[2] = r[2] - r[1]
-    g[2] = H_star @ r[2]
-    H_g_0 = complex_matrix @ g[2]
+    g[2] = utils.matrix_diag_prod(H_star, r[2])
+    H_g_0 = utils.matrix_diag_prod(complex_matrix, g[2])
 
     l_11 = utils.vec_dot_complex_prod(delta_r[2], delta_r[2])
     l_12 = utils.vec_dot_complex_prod(g[2], g[2])
@@ -86,13 +82,13 @@ def ThreeSGD_solver(complex_matrix: np.ndarray,
         return u_vector, it_space, r, delta_r, g, d, alpha, beta, gamma
 
     for iter_index in range(3, n_iter):
-        new_r = complex_matrix @ u_vector[iter_index - 1] - f_vector
+        new_r = utils.matrix_diag_prod(complex_matrix, u_vector[iter_index - 1]) - f_vector
         r = np.concatenate((r, new_r.reshape((1, -1))), axis=0)
 
         new_delta_r = r[iter_index] - r[iter_index - 1]
         delta_r = np.concatenate((delta_r, new_delta_r.reshape((1, -1))), axis=0)
 
-        new_g = H_star @ r[iter_index]
+        new_g = utils.matrix_diag_prod(H_star, r[iter_index])
         g = np.concatenate((g, new_g.reshape((1, -1))), axis=0)
 
         delta_u = u_vector[iter_index - 1] - u_vector[iter_index - 2]
@@ -102,8 +98,8 @@ def ThreeSGD_solver(complex_matrix: np.ndarray,
                 delta_u
         d = np.concatenate((d, new_d.reshape((1, -1))), axis=0)
 
-        a_1 = complex_matrix @ g[iter_index]
-        a_2 = complex_matrix @ d[iter_index]
+        a_1 = utils.matrix_diag_prod(complex_matrix, g[iter_index])
+        a_2 = utils.matrix_diag_prod(complex_matrix, d[iter_index])
         l_11 = utils.vec_dot_complex_prod(delta_r[iter_index], delta_r[iter_index])
         l_12 = utils.vec_dot_complex_prod(g[iter_index], g[iter_index])
         l_13 = -utils.vec_dot_complex_prod(d[iter_index], g[iter_index - 1])
@@ -144,10 +140,10 @@ def ThreeSGD_solver(complex_matrix: np.ndarray,
 
 
 def _main():
-    A_matrix = np.diag(np.array((0.5, 1, 1.5, 2, 2.5)))
+    A_matrix = np.array((0.5, 1, 1.5, 2, 2.5))
     f_vector = np.array((1, 2, 3, 4, 5))
     solve, it_space, _, _, _, _, alpha, beta, gamma = ThreeSGD_solver(A_matrix, f_vector)
-    real_solve = f_vector / np.diag(A_matrix)
+    real_solve = f_vector / A_matrix
     print("Real_Solve")
     print(real_solve)
     print("\nIterations Solve")
