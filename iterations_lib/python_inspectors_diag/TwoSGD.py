@@ -77,8 +77,8 @@ def TwoSGD_solver(complex_matrix: np.ndarray,
 
 
 def _main():
-    A_matrix = np.array((0.5, 1, 1.5, 2, 2.5))
-    f_vector = np.array((1, 2, 3, 4, 5))
+    A_matrix = np.array((0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 50, 500, 5000))
+    f_vector = np.array((1, 2, 3, 4, 5, 6, 7, 8, 100, 1000, 10000))
     solve, it_space, _, _, alpha, gamma = TwoSGD_solver(A_matrix, f_vector)
     real_solve = f_vector / A_matrix
     print("Real_Solve")
