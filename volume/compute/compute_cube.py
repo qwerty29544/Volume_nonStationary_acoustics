@@ -1,6 +1,6 @@
 import numpy as np
 import numba
-import volume.compute.custom_algebra as ca
+import custom_numeric_algorithms.custom_algebra as ca
 
 
 @numba.jit(cache=True,
@@ -122,8 +122,3 @@ def find_cube_neighbors(cube_tensor):
                     cube_neighbors[cube][5] = cube_apparent
 
     return cube_neighbors
-
-
-
-
-

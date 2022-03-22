@@ -4,9 +4,8 @@ import random
 import pandas as pd
 import volume.discrete_shapes.cube_shape as cs
 import volume.compute.compute_cube as cc
-import volume.compute.custom_algebra as ca
-import plotly.express as px
-from iterations_lib.python_inspectors import FPI, BiCGStab, TwoSGD, ThreeSGD, utils
+import custom_numeric_algorithms.custom_algebra as ca
+from iterations_lib.python_inspectors import BiCGStab, TwoSGD, ThreeSGD, utils
 
 
 def plot_iterations(z_history, iteration_space, color="#FF00FF"):

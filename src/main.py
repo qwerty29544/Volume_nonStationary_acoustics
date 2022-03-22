@@ -1,7 +1,6 @@
 import volume.discrete_shapes.cube_shape as CS
 import volume.discrete_shapes.gmsh_parser as gmsh
 import volume.compute.compute_cube as CC
-import volume.compute.custom_algebra as CA
 import numpy as np
 
 
