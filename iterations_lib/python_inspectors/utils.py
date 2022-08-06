@@ -3,10 +3,7 @@ import numpy.typing as npt
 
 
 def check_square(matrix):
-    if matrix.shape.count(matrix.shape[0]) == len(matrix.shape):
-        return True
-    else:
-        return False
+    return matrix.shape.count(matrix.shape[0]) == len(matrix.shape)
 
 
 def vec_dot_complex_prod_bicg(vec1: np.ndarray, vec2: np.ndarray):
