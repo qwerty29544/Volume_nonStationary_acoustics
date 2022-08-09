@@ -79,6 +79,7 @@ def TwoSGD(matrix_A,
     return vector_u2, k
 
 
+# ------------------------------------------------------------------------------------------------
 
 # Тестовая задача с интегрированием на отрезке
 
@@ -103,6 +104,7 @@ def problem_1d(a, b, n):
     return matrix_A, vector_f
 
 
+# Ядро выполнения
 def test_example_1d(json_config=None):
     if json_config is None:             # Если на задан файл конфигурации
         a = float(input("Введите нижнюю границу интегрирования: a = "))
@@ -131,6 +133,23 @@ def test_example_1d(json_config=None):
     print(" ")
     print(f"Количество умножений матрицы на вектор N_iter = {num_iter}")
     return 0
+
+
+# -----------------------------------------------------------------------
+
+# Тестовая задача с интегрированием на плоскости
+
+def kernel_2d(x, y):
+    return np.array([x[0] + y[0], x[1] + y[1]])
+
+def vector_f2d(x):
+    return np.exp(-x[0])
+
+
+
+def test_example_2d(json_config=None):
+    return 0
+
 
 
 # -----------------------------------------------------------------------

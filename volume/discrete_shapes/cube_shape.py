@@ -2,11 +2,7 @@ import numpy as np
 import numba
 
 
-@numba.jit(cache=True,
-           fastmath=True,
-           nogil=True,
-           nopython=True,
-           parallel=True)
+
 def cube_shape(center_point,
                hwl_lengths,
                n_discrete_hwl):
