@@ -2,7 +2,7 @@ import numpy as np
 import numba
 
 
-
+@numba.njit()
 def cube_shape(center_point,
                hwl_lengths,
                n_discrete_hwl):
@@ -32,10 +32,10 @@ def cube_shape(center_point,
 
     """
     # Cube tensor for computations in N^3 x 4 x 3 shape
-    cube_tensor = np.zeros((np.prod(n_discrete_hwl), 8, 3))
+    cube_tensor = np.zeros((n_discrete_hwl[0] * n_discrete_hwl[1] * n_discrete_hwl[2], 8, 3))
 
     # Plane tensor for prev computations in XY space
-    plane_tensor = np.zeros((np.prod(n_discrete_hwl[:2]), 4, 2))
+    plane_tensor = np.zeros((n_discrete_hwl[0] * n_discrete_hwl[1], 4, 2))
 
     # Norms or proportions of HWL points of cube
     height = (np.linspace(0, 1, n_discrete_hwl[0]+1) * hwl_lengths[2]) - hwl_lengths[2]/2 + center_point[2]
@@ -50,7 +50,7 @@ def cube_shape(center_point,
                                                                              [length[l_index], width[w_index + 1]],
                                                                              [length[l_index + 1], width[w_index + 1]]])
 
-    N_2 = np.prod(n_discrete_hwl[:2])
+    N_2 = n_discrete_hwl[0] * n_discrete_hwl[1]
     for h_index in range(height.shape[0]-1):
         lower_matrix = np.concatenate((plane_tensor, np.full((N_2, 4, 1), height[h_index])), axis=2)
         upper_matrix = np.concatenate((plane_tensor, np.full((N_2, 4, 1), height[h_index+1])), axis=2)
