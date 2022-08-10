@@ -122,3 +122,26 @@ def find_cube_neighbors(cube_tensor):
                     cube_neighbors[cube][5] = cube_apparent
 
     return cube_neighbors
+
+
+@numba.njit()
+def decode_int_index(num, N_x):
+    if num >= N_x**3:
+        return [0, 0, 0]
+    else:
+        return [(num // N_x) // N_x, (num // N_x) % N_x, num % N_x]
+
+
+@numba.njit()
+def encode(code, N_x):
+    return code[2] + code[1] * N_x + code[0] * N_x * N_x
+
+
+if __name__=="__main__":
+    N_n = int(input("Enter discret cubes"))
+    for i in range(N_n**3):
+        decode = decode_int_index(i, N_n)
+        print(decode_int_index(i, N_n))
+        print(encode(np.array(decode), N_n))
+
+

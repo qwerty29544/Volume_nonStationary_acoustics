@@ -2,52 +2,9 @@ import numpy as np
 import numba
 import matplotlib.pyplot as plt
 from volume.discrete_shapes.cube_shape import cube_shape
-
-
-# def compute_plane_equation(x, y, z):
-#     a = (y[1] - y[0]) * (z[2] - z[0]) - (z[1] - z[0]) * (y[2] - y[0])
-#     b = (z[1] - z[0]) * (x[2] - x[0]) - (x[1] - x[0]) * (z[2] - z[0])
-#     c = (x[1] - x[0]) * (y[2] - y[0]) - (y[1] - y[0]) * (x[2] - x[0])
-#     d = -x[0] * a - y[0] * b - z[0] * c
-#     min_coeff = np.min([a, b, c, d])
-#     return a/min_coeff, b/min_coeff, c/min_coeff, d/min_coeff
-#
-#
-# def integrate_pyramid(h=1):
-#     x1, y1, z1 = h/2, 0, 0
-#     integral = tplquad(kernel, a=0, b=h/2,
-#                        gfun=lambda x: 0, hfun=lambda x: 1/2 - x,
-#                        qfun=lambda x,y: 0, rfun=lambda x,y: 1/2 - x, args=(x1, y1, z1))
-#     return integral
-#
-#
-# def monte_carlo_integral_pyramid(function, h=1, num_samples=100):
-#     x = np.random.uniform(0, h/2, num_samples * 5)
-#     y = np.random.uniform(0, h/2, num_samples * 5)
-#     z = np.random.uniform(0, h/2, num_samples * 5)
-#     vectors = np.concatenate((x.reshape(-1, 1), y.reshape(-1, 1), z.reshape(-1, 1)), axis=1)
-#     iter_list = []
-#     for iter in range(len(vectors)):
-#         if (vectors[iter, 0] >= 0 and vectors[iter, 0] < h/2 and
-#             vectors[iter, 1] >= 0 and vectors[iter, 1] + vectors[iter, 0] <= h/2 and
-#             vectors[iter, 2] >= 0 and vectors[iter, 2] + vectors[iter, 0] <= h/2):
-#             iter_list.append(iter)
-#     volume = 1/3 * h/2 * h/2 * h/2
-#     return np.mean(function(vectors[iter_list, 0], vectors[iter_list, 1], vectors[iter_list, 2], h/2, 0, 0)) * volume
-#
-#
-#
-# def monte_carlo_integral_graphics(fun, fro=2, to=400, h=1, seed=123):
-#     np.random.seed(seed)
-#     x_grid = np.arange(fro, to + 1)
-#     y_grid = []
-#     for iter in x_grid:
-#         y_grid.append(monte_carlo_integral_pyramid(kernel, h, iter))
-#     y_grid = np.array(y_grid)
-#     plt.plot(x_grid, y_grid, c = "r", label="Значения сингулярного интеграла от количества точек")
-#     plt.show()
-#     return 0
-#
+from utils.io_files import save_np_file_txt, load_np_file_txt
+from scipy.sparse.linalg import gmres
+from iterations_lib.python_iterations.TwoSGD import TwoSGD
 
 
 @numba.njit()
@@ -100,53 +57,73 @@ def slicing_integrals(beh_point_num,                # Индекс точки о
     return np.sum(square)
 
 
+@numba.njit()
+def free_func(x, k, direction=np.array([1., 0., 0.])):
+    return np.exp(-1j * k * (x.dot(direction)))
 
-def core():
+
+@numba.njit()
+def N_samples_func(x, y, h, top=30, low=2, depth=4):
+    distance = np.sqrt((x - y).dot(x - y))
+    if distance < depth * h:
+        return int(np.exp(-((np.log(top) - np.log(low))/(depth * h)) * distance + np.log(top)))
+    else:
+        return low
+
+
+def core_stationary():
     N = int(input("Enter number of cubes in cube space: N = "))
     lengths_xyz = float(input("Enter value of charactreical lenghts: L = "))
-    center_point = list(map(float, input("Enter center point by x y z: ").strip().split()))
-    print(center_point)
+    center_point = np.array(list(map(float, input("Enter center point by x y z: ").strip().split())))
+    direction = np.array(list(map(float, input("Enter angle of wave by x y z: ").strip().split())))
+    direction = direction / np.sqrt(direction.dot(direction))
+    k = float(input("Input wave constant: k = "))
+
 
     cubes_discretization = cube_shape(center_point=center_point,
                                       hwl_lengths=np.array([lengths_xyz, lengths_xyz, lengths_xyz]),
                                       n_discrete_hwl=np.array([N, N, N]))
-    print("Cubes discretization")
-    print(cubes_discretization)
-
-    cubes_collocations = np.mean(cubes_discretization, axis=1)
-    print("Cubes collocations")
-    print(cubes_collocations)
 
     h = cubes_discretization[0, 1, 0] - cubes_discretization[0, 0, 0]
 
+    cubes_collocations = np.mean(cubes_discretization, axis=1)
 
-    print(slicing_integrals(beh_point_num=0, colloc_point_num=0,
-                            cubes_collocations=cubes_collocations,
-                            kernel_func=kernel_nonstat, h=h, N_samples=40))
+    #compute_coeffs(kernel_stat, cubes_collocations, N, h, filename="../resources/cube_coeffs_stat_15.txt")
+    core_coeffs = load_np_file_txt("../resources/cube_coeffs_stat_" + str(N) + ".txt")
 
-    beh_grid = np.arange(0, N**3)
-    colloc_grid = np.arange(0, N**3)
+    matrix_A = core_coeffs - (k * k) * np.diag(np.ones(N * N * N, dtype=complex))
+    vector_U0 = ((-1) * core_coeffs) @ free_func(cubes_collocations, k, direction)
+    U = gmres(matrix_A, vector_U0)
 
-    core_coeffs = np.zeros((N**3, N**3), dtype=complex)
-    for p in range(N**3):
-        for q in range(p, N**3):
-            core_coeffs[p, q] = slicing_integrals(beh_point_num=beh_grid[q],
-                                                  colloc_point_num=colloc_grid[p],
-                                                  cubes_collocations=cubes_collocations,
-                                                  kernel_func=kernel_stat,
-                                                  h=h,
-                                                  N_samples=5)
-            core_coeffs[q, p] = core_coeffs[p, q]
-
-    print(core_coeffs)
-
-    plt.imshow(np.abs(core_coeffs))
+    plt.plot(np.arange(N*N*N), np.real(U[0]))
+    plt.plot(np.arange(N*N*N), np.imag(U[0]))
+    #plt.imshow(np.abs(core_coeffs))
     plt.show()
 
+    Ul, _ = TwoSGD(matrix_A, vector_U0)
+    plt.plot(np.arange(N*N*N), np.real(Ul))
+    plt.plot(np.arange(N*N*N), np.imag(Ul))
+    plt.show()
     return 0
 
 
+def compute_coeffs(kernel, cubes_collocations, N, h, filename):
+    core_coeffs = np.zeros((N * N * N, N * N * N), dtype=complex)
+    for p in np.arange(N * N * N):
+        for q in np.arange(p, N * N * N):
+            core_coeffs[p, q] = slicing_integrals(beh_point_num=q,
+                                                  colloc_point_num=p,
+                                                  cubes_collocations=cubes_collocations,
+                                                  kernel_func=kernel,
+                                                  h=h,
+                                                  N_samples=N_samples_func(x=cubes_collocations[q],
+                                                                           y=cubes_collocations[p],
+                                                                           h=h))
+            core_coeffs[q, p] = core_coeffs[p, q]
+    save_np_file_txt(core_coeffs, filename)
+    return core_coeffs
+
 
 if __name__ == "__main__":
-    core()
-    #monte_carlo_integral_graphics(kernel, fro=2, to=2000)
+    core_stationary()
+
