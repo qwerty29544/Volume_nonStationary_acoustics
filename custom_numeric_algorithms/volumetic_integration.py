@@ -1,10 +1,7 @@
 import numpy as np
 import numba
-import matplotlib.pyplot as plt
 from volume.discrete_shapes.cube_shape import cube_shape
 from utils.io_files import save_np_file_txt, load_np_file_txt
-from scipy.sparse.linalg import gmres
-from iterations_lib.python_iterations.TwoSGD import TwoSGD
 
 
 @numba.njit()
@@ -58,7 +55,7 @@ def slicing_integrals(beh_point_num,                # Индекс точки о
 
 
 @numba.njit()
-def free_func(x, k, direction=np.array([1., 0., 0.])):
+def free_func_stat(x, k, direction=np.array([1., 0., 0.])):
     return np.exp(-1j * k * (x.dot(direction)))
 
 
@@ -69,42 +66,6 @@ def N_samples_func(x, y, h, top=30, low=2, depth=4):
         return int(np.exp(-((np.log(top) - np.log(low))/(depth * h)) * distance + np.log(top)))
     else:
         return low
-
-
-def core_stationary():
-    N = int(input("Enter number of cubes in cube space: N = "))
-    lengths_xyz = float(input("Enter value of charactreical lenghts: L = "))
-    center_point = np.array(list(map(float, input("Enter center point by x y z: ").strip().split())))
-    direction = np.array(list(map(float, input("Enter angle of wave by x y z: ").strip().split())))
-    direction = direction / np.sqrt(direction.dot(direction))
-    k = float(input("Input wave constant: k = "))
-
-
-    cubes_discretization = cube_shape(center_point=center_point,
-                                      hwl_lengths=np.array([lengths_xyz, lengths_xyz, lengths_xyz]),
-                                      n_discrete_hwl=np.array([N, N, N]))
-
-    h = cubes_discretization[0, 1, 0] - cubes_discretization[0, 0, 0]
-
-    cubes_collocations = np.mean(cubes_discretization, axis=1)
-
-    #compute_coeffs(kernel_stat, cubes_collocations, N, h, filename="../resources/cube_coeffs_stat_15.txt")
-    core_coeffs = load_np_file_txt("../resources/cube_coeffs_stat_" + str(N) + ".txt")
-
-    matrix_A = core_coeffs - (k * k) * np.diag(np.ones(N * N * N, dtype=complex))
-    vector_U0 = ((-1) * core_coeffs) @ free_func(cubes_collocations, k, direction)
-    U = gmres(matrix_A, vector_U0)
-
-    plt.plot(np.arange(N*N*N), np.real(U[0]))
-    plt.plot(np.arange(N*N*N), np.imag(U[0]))
-    #plt.imshow(np.abs(core_coeffs))
-    plt.show()
-
-    Ul, _ = TwoSGD(matrix_A, vector_U0)
-    plt.plot(np.arange(N*N*N), np.real(Ul))
-    plt.plot(np.arange(N*N*N), np.imag(Ul))
-    plt.show()
-    return 0
 
 
 def compute_coeffs(kernel, cubes_collocations, N, h, filename):
@@ -124,6 +85,42 @@ def compute_coeffs(kernel, cubes_collocations, N, h, filename):
     return core_coeffs
 
 
-if __name__ == "__main__":
-    core_stationary()
+def core_compute_coeffs_problems(kernel, N=None, lengths_xyz=None, center_point=None, filename=None):
+    """
+    Функция для подсчета коэффициентов - интегралов для коллокаций относительно опорных точек
+    П
+    :param kernel: функция относительно которой необходимо подсчитать коэффициенты матрицы СЛАУ для стационарной задачи
+    :param filename: Имя файла для сохранения резлуьтатов расчета
+    :return:    логическое значение
+    """
+    if N is None:
+        N = int(input("Enter number of cubes in cube space: N = "))
 
+    if lengths_xyz is None:
+        lengths_xyz = float(input("Enter value of charactreical lenghts: L = "))
+
+    if center_point is None:
+        center_point = np.array(list(map(float, input("Enter center point by x y z: ").strip().split())))
+
+    if filename is None:
+        filename = input("Enter path to file to save array: filename = ")
+
+    cubes_discretization = cube_shape(center_point=center_point,
+                                      hwl_lengths=np.array([lengths_xyz, lengths_xyz, lengths_xyz]),
+                                      n_discrete_hwl=np.array([N, N, N]))
+
+    h = cubes_discretization[0, 1, 0] - cubes_discretization[0, 0, 0]
+    cubes_collocations = np.mean(cubes_discretization, axis=1)
+    compute_coeffs(kernel=kernel_stat,
+                   cubes_collocations=cubes_collocations,
+                   N=N,
+                   h=h,
+                   filename=filename)
+    return True
+
+
+if __name__ == "__main__":
+    for iter_disc in range(3, 16):
+        core_compute_coeffs_problems(kernel=kernel_nonstat, N=iter_disc,
+                                     lengths_xyz=1.0, center_point=np.array([0., 0., 0.], dtype=float),
+                                     filename="../resources/cube_coeffs_nonstat_" + str(iter_disc) + ".txt")
