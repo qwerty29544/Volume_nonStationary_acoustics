@@ -2,14 +2,14 @@ import numpy as np
 import numba
 
 
-@numba.njit()
+@numba.njit(fastmath=True, parallel=True)
 def cube_shape(center_point,
                hwl_lengths,
                n_discrete_hwl):
     """
     cube_shape(center_point, hwl_lengths, n_discrete_hwl)
 
-        Функция, которая вычилсяет массив матриц кубиков из большого куба с заданными харакетристиками
+        Функция, которая вычилсяет массив матриц кубиков из большого куба с заданными характеристиками
         Для кубика
 
         XYZ: [[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 1, 1]];

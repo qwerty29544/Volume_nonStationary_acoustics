@@ -69,7 +69,10 @@ def TwoSGD(matrix_A,
                     ((-a2 * a2) * (vector_u1 - vector_u0) + (a1 * a2) * As_r)/denom
         delta_u = vector_u2 - vector_u1
 
-        if (dot_complex(delta_u, delta_u) / dot_complex(vector_f, vector_f) < eps):
+        accuracy = dot_complex(delta_u, delta_u) / dot_complex(vector_f, vector_f)
+        print(accuracy)
+
+        if (accuracy < eps):
             break
 
         vector_r0 = vector_r1

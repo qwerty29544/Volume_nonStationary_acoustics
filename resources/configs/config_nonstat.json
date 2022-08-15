@@ -1,0 +1,11 @@
+{
+  "directory": "../resources/test_stat_2",
+  "N": 10,
+  "L": 1.0,
+  "k": 5.0,
+  "E0": 1.0,
+  "center_point": [0.0, 0.0, 0.0],
+  "orientation": [1, 0, 0],
+  "experiment_number": 1235,
+
+}

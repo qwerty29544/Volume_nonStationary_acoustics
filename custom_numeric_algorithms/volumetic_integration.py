@@ -2,17 +2,9 @@ import numpy as np
 import numba
 from volume.discrete_shapes.cube_shape import cube_shape
 from utils.io_files import save_np_file_txt, load_np_file_txt
+from custom_numeric_algorithms.stationary_acoustics_3d import kernel_stat
+from custom_numeric_algorithms.nonstat_acoustics_3d import kernel_nonstat
 
-
-@numba.njit()
-def kernel_nonstat(x, y, z, x1, y1, z1):
-    return 1/(4 * np.pi * np.sqrt((x - x1)**2 + (y - y1)**2 + (z - z1)**2))
-
-
-@numba.njit()
-def kernel_stat(x, y, z, x1, y1, z1, k=1):
-    return (np.exp(1j * k * np.sqrt((x - x1)**2 + (y - y1)**2 + (z - z1)**2)) /
-            (4 * np.pi * np.sqrt((x - x1)**2 + (y - y1)**2 + (z - z1)**2)))
 
 
 def slicing_integrals(beh_point_num,                # Индекс точки опоры
@@ -41,8 +33,10 @@ def slicing_integrals(beh_point_num,                # Индекс точки о
                          hwl_lengths=np.array([h, h, h]),
                          n_discrete_hwl=np.array([N_samples, N_samples, N_samples]))
 
+
     if beh_point_num == colloc_point_num:
         # Выкалываем центральную точку из дробного интегрирования
+
         points = np.concatenate((np.mean(shape_c, 1)[:int((N_samples ** 3)/2)],
                                  np.mean(shape_c, 1)[(int((N_samples ** 3)/2)+1):]), 0)
     else:
@@ -52,11 +46,6 @@ def slicing_integrals(beh_point_num,                # Индекс точки о
     square = kernel_func(colloc_point[0], colloc_point[1], colloc_point[2],
                          points[:, 0], points[:, 1], points[:, 2]) * dv
     return np.sum(square)
-
-
-@numba.njit()
-def free_func_stat(x, k, direction=np.array([1., 0., 0.])):
-    return np.exp(-1j * k * (x.dot(direction)))
 
 
 @numba.njit()

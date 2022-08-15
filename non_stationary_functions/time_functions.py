@@ -52,10 +52,8 @@ def find_time_proportions(time_shifted, time_lower, time_delta):
 def _test():
     tau = 0.025
     time_delta = 0.004
-
     timeline = init_timeline(time_0=0., time_delta=time_delta, time_end=1.)
     time = timeline[53]
-
     indexes = find_timeline_tau_indexes_between(tau, time_delta)
     print("time =", time,"minus tau =", tau, " t =", time - tau," is between ", (timeline[53 - indexes[0]], timeline[53 - indexes[1]]))
 
