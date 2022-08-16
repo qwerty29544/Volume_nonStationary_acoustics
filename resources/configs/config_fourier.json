@@ -1,10 +1,10 @@
 {
-  "directory": "../resources/test_stat_fourier_7",
-  "N": 25,
-  "L": 1.0,
+  "directory": "../resources/test_stat_fourier_8",
+  "N": 30,
+  "L": 2.0,
   "k": 15,
   "E0": 1.0,
   "center_point": [0.0, 0.0, 0.0],
   "orientation": [1.0, 0.87, 0.13],
-  "experiment_number": 44
+  "experiment_number": 45
 }

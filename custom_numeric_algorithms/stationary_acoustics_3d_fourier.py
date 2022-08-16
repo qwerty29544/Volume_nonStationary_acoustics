@@ -315,11 +315,72 @@ def TwoSGD_fourier(matrix_A, vector_f, Nf, eps=10e-7, n_iter=10000):
     return vector_u2, k
 
 
-@nb.njit(fastmath=True)
+@nb.jit(fastmath=True, parallel=True)
 def free_func_stat(x, k, E0=1.0, direction=np.array([1., 0., 0.])):
     return E0 * np.exp(-1j * k * (x.dot(direction)))
 
 
+@nb.jit(fastmath=True, parallel=True)
+def n_refr_exp(x, mean=0.0, sdiv=0.5, level=1.0):
+    return (level +
+            (1/np.sqrt(2 * np.pi * sdiv)) *
+            np.exp(-((np.sqrt(x.dot(x)) - mean) ** 2)/
+                   (4 * sdiv * sdiv)))
+
+
+@nb.jit(fastmath=True)
+def complex_dot1(complex_vec1, complex_vec2):
+    return np.conj(complex_vec1).dot(complex_vec2)
+
+
+@nb.jit(fastmath=True)
+def complex_dot2(complex_vec1, complex_vec2):
+    return complex_vec1.dot(complex_vec2)
+
+
+@nb.jit(fastmath=True, forceobj=True)
+def BiCGStab_fourier_refr(A, f, n_refr, Nf,
+                          vector_u0 = None,
+                          eps=10e-7,
+                          max_iter=10000):
+    if vector_u0 is None:
+        vector_u0 = np.ones(A.shape[0])
+
+    r_0 = f - vector_u0 + fourier_mult_3d_complex(A, n_refr * vector_u0, Nf)
+    r_tild = r_0
+    rho_0 = 1
+    alpha_0 = 1
+    omega_0 = 1
+    v_0 = np.zeros(A.shape[0])
+    p_0 = np.zeros(A.shape[0])
+    k = 0
+    vector_u = np.ones(A.shape[0])
+
+    for iter in nb.prange(max_iter):
+        rho = complex_dot1(r_tild, r_0)
+        beta = (rho / rho_0) * (alpha_0 / omega_0)
+        p = r_0 + beta * (p_0 - omega_0 * v_0)
+        v = p - fourier_mult_3d_complex(A, n_refr * p, Nf)
+        alpha = (rho / complex_dot1(r_tild, v))
+        s = r_0 - alpha * v
+        t = s - fourier_mult_3d_complex(A, n_refr * s, Nf)
+        omega = complex_dot2(t, s) / complex_dot2(t, t)
+        vector_u = vector_u0 + omega * s + alpha * p
+        r = s - omega * t
+        k += 2
+        delta_eps = dot_complex(r, r) / dot_complex(f, f)
+        print(f"n_iterations = {k}, delt_eps = {delta_eps}")
+        if delta_eps < eps:
+            break
+        vector_u0 = vector_u
+        rho_0 = rho
+        r_0 = r
+        alpha_0 = alpha
+        v_0 = v
+        omega_0 = omega
+        p_0 = p
+
+    return vector_u, k
 
 if __name__ == "__main__":
     conf = JsonConfig_stat("../resources/configs/config_fourier.json")
