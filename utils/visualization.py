@@ -86,3 +86,32 @@ def plot_cube_slices3d(vector_U, N_discr=10,
         plt.savefig(filename_opt)
         plt.show()
         return 1
+
+
+def plot_density_slices3d(vector_U, N_discr=10,
+                          filename_opt="rhoo.png",
+                          xlabel_opt="X axis",
+                          ylabel_opt="Y axis"):
+    fig = plt.figure(figsize=(48, 10))
+
+    n_mid = np.ceil(N_discr/2)
+    n_midmid = np.ceil(n_mid / 2)
+    mult = N_discr * N_discr
+
+    ax1 = fig.add_subplot(131)
+    ax1.contourf(vector_U[:mult].reshape((N_discr, N_discr)), levels=N_discr * 3)
+
+    ax2 = fig.add_subplot(132)
+    ax2.contourf(vector_U[((int(n_midmid) - 1) * mult):(int(n_midmid) * mult)].reshape((N_discr, N_discr)),
+                 levels=N_discr*3)
+
+    ax3 = fig.add_subplot(133)
+    ax3.contourf(vector_U[(int(n_mid) - 1) * mult:(int(n_mid) * mult)].reshape((N_discr, N_discr)),
+                 levels=N_discr*3)
+
+    plt.xlabel(xlabel_opt)
+    plt.ylabel(ylabel_opt)
+    plt.savefig(filename_opt)
+    plt.show()
+
+    return 1

@@ -1,6 +1,6 @@
 import numpy as np
 import numba as nb
-from utils.visualization import plot_cube_scatter3d, plot_cube_slices3d
+from utils.visualization import plot_cube_scatter3d, plot_cube_slices3d, plot_density_slices3d
 from utils.io_files import save_np_file_txt, load_np_file_txt, JsonConfig_stat
 
 
@@ -269,7 +269,9 @@ def TwoSGD_fourier(matrix_A, vector_f, Nf, eps=10e-7, n_iter=10000):
     delta_u = vector_u1 - vector_u0
     k = 3
 
-    if (dot_complex(delta_u, delta_u) / dot_complex(vector_f, vector_f) < eps):
+    delt_eps = dot_complex(delta_u, delta_u) / dot_complex(vector_f, vector_f)
+    print(f"n_iterations = {k}, delt_eps = {delt_eps}")
+    if (delt_eps < eps):
         return vector_u1, k
 
     vector_u2 = vector_u1
@@ -293,7 +295,10 @@ def TwoSGD_fourier(matrix_A, vector_f, Nf, eps=10e-7, n_iter=10000):
                     ((-a2 * a2) * (vector_u1 - vector_u0) + (a1 * a2) * As_r) / denom
         delta_u = vector_u2 - vector_u1
 
-        if (dot_complex(delta_u, delta_u) / dot_complex(vector_f, vector_f) < eps):
+        delt_eps = dot_complex(delta_u, delta_u) / dot_complex(vector_f, vector_f)
+        print(f"n_iterations = {k}, delt_eps = {delt_eps}")
+
+        if (delt_eps < eps):
             break
 
         vector_r0 = vector_r1
@@ -315,19 +320,27 @@ if __name__ == "__main__":
     cube_grid = cube_shape(center_point=conf.center_point,
                            hwl_lengths=conf.hwl_lenghts,
                            n_discrete_hwl=conf.n_discrete_hwl)
+    print("Cube grid completed")
 
     collocations = np.mean(cube_grid, axis=1)
+    print("Collocations completed")
+
     h = collocations[1, 1] - collocations[0, 1]
 
     coeffs = compute_coeffs_line(cubes_collocations=collocations,
                                  N=conf.n_x, h=h)
+    print("Coeffs completed")
 
     A = - conf.k * conf.k * coeffs
     A[0] = A[0] + (1.0 + 0.0j)
     f = free_func_stat(x=collocations, k=conf.k, E0=conf.E0, direction=conf.orientation)
+    print("F vector completed")
+
     vector_U0 = -1.0 * fourier_mult_3d_complex(coeffs, f, conf.n_x)
+    print("vector U0 completed")
 
     Ul, m = TwoSGD_fourier(matrix_A=A, vector_f=vector_U0, Nf=conf.n_x, eps=10e-4)
+    print("Iterations completed")
 
     plot_cube_scatter3d(vector_U=np.real(Ul),
                         cubes_collocations=collocations,
@@ -346,5 +359,13 @@ if __name__ == "__main__":
     plot_cube_slices3d(vector_U=np.imag(Ul), N_discr=conf.n_x,
                        filename_opt=conf.dir_path_slices + "/slices_scatter_imag_3d_" +
                                     str(conf.n_x) + "_NO_" + str(conf.exp_no) + ".png")
+
+    plot_density_slices3d(vector_U=np.real(Ul), N_discr=conf.n_x,
+                          filename_opt=conf.dir_path_slices + "/slices_density_real_3d_" +
+                                    str(conf.n_x) + "_NO_" + str(conf.exp_no) + ".png")
+    plot_density_slices3d(vector_U=np.imag(Ul), N_discr=conf.n_x,
+                          filename_opt=conf.dir_path_slices + "/slices_density_imag_3d_" +
+                                    str(conf.n_x) + "_NO_" + str(conf.exp_no) + ".png")
+
 
     conf.save_file_results(Ul, iterations=m)

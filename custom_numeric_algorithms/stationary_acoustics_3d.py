@@ -3,7 +3,7 @@ import numba
 from volume.discrete_shapes.cube_shape import cube_shape
 from utils.io_files import save_np_file_txt, load_np_file_txt, JsonConfig_stat
 from iterations_lib.python_iterations.TwoSGD import TwoSGD
-from utils.visualization import plot_cube_scatter3d, plot_cube_slices3d
+from utils.visualization import plot_cube_scatter3d, plot_cube_slices3d, plot_density_slices3d
 
 
 @numba.njit(fastmath=True, parallel=True)
@@ -51,6 +51,13 @@ def core_stationary():
                                     str(config.n_x) + "_NO_" + str(config.exp_no) + ".png")
     plot_cube_slices3d(vector_U=np.imag(Ul), N_discr=config.n_x,
                        filename_opt=config.dir_path_slices + "/slices_scatter_imag_3d_" +
+                                    str(config.n_x) + "_NO_" + str(config.exp_no) + ".png")
+
+    plot_density_slices3d(vector_U=np.real(Ul), N_discr=config.n_x,
+                          filename_opt=config.dir_path_slices + "/slices_density_real_3d_" +
+                                    str(config.n_x) + "_NO_" + str(config.exp_no) + ".png")
+    plot_density_slices3d(vector_U=np.imag(Ul), N_discr=config.n_x,
+                          filename_opt=config.dir_path_slices + "/slices_density_imag_3d_" +
                                     str(config.n_x) + "_NO_" + str(config.exp_no) + ".png")
 
     config.save_file_results(Ul, iterations=m)
