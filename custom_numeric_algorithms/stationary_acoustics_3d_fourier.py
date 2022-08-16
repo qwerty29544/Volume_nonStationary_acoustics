@@ -62,7 +62,8 @@ def cube_shape(center_point,
     return cube_tensor
 
 
-@nb.njit(fastmath=True, parallel=True)
+# @nb.njit(fastmath=True, parallel=True, cache=True)
+@nb.jit()
 def prep_fourier_my_matrix(A_first):
     A_vec = np.zeros(A_first.shape[0] * 2)
     A_vec[:A_first.shape[0]] = A_first
@@ -70,14 +71,16 @@ def prep_fourier_my_matrix(A_first):
     return A_vec
 
 
-@nb.njit(fastmath=True, parallel=True)
+# #@nb.njit(fastmath=True, parallel=True, cache=True)
+@nb.jit()
 def prep_fourier_my_vector(u_vec):
     u_prep = np.zeros(2 * u_vec.shape[0])
     u_prep[:u_vec.shape[0]] = u_vec
     return u_prep
 
 
-@nb.njit(fastmath=True, parallel=True)
+# #@nb.njit(fastmath=True, parallel=True, cache=True)
+@nb.jit(fastmath=True)
 def fourier_mult_1d(A_vec, f_vec, N):
     # Циркулянтная матрица A:
     #      |a_{0}   a_{-1}   ..  a_{-N}   |
@@ -102,7 +105,8 @@ def fourier_mult_1d(A_vec, f_vec, N):
     return res[:N]
 
 
-@nb.njit(fastmath=True, parallel=True)
+#@nb.njit(fastmath=True, parallel=True, cache=True)
+@nb.jit(fastmath=True)
 def fourier_mult_2d(C_first_row, F_vector, N):
     res = np.empty((N * N,))
     for row in nb.prange(N):
@@ -117,7 +121,8 @@ def fourier_mult_2d(C_first_row, F_vector, N):
     return res
 
 
-@nb.njit(fastmath=True, parallel=True)
+#@nb.njit(fastmath=True, cahce=True)
+@nb.jit(fastmath=True, cache=True)
 def fourier_mult_3d(C_matrix_first_row, F_vector, N):
     block = N * N
     res = np.empty((N * N * N,))
@@ -132,6 +137,7 @@ def fourier_mult_3d(C_matrix_first_row, F_vector, N):
     return res
 
 
+#@nb.njit(fastmath=True, cache=True)
 @nb.jit(fastmath=True, parallel=True)
 def fourier_mult_3d_complex(C_mat_first_row, F_vector, N):
     result = (fourier_mult_3d(np.real(C_mat_first_row), np.real(F_vector), N) +
@@ -251,8 +257,8 @@ def dot_complex(vec1, vec2):
     return np.real(vec1.dot(np.conj(vec2)))
 
 
-
-@nb.jit(forceobj=True, fastmath=True)
+# fastmath=True, parallel=True, forceobj=True
+@nb.jit(forceobj=True)
 def TwoSGD_fourier(matrix_A, vector_f, Nf, eps=10e-7, n_iter=10000):
     vector_u0 = np.ones(matrix_A.shape[0])
     vector_u1 = vector_u0
