@@ -132,7 +132,7 @@ def fourier_mult_3d(C_matrix_first_row, F_vector, N):
     return res
 
 
-@nb.jit()
+@nb.jit(fastmath=True, parallel=True)
 def fourier_mult_3d_complex(C_mat_first_row, F_vector, N):
     result = (fourier_mult_3d(np.real(C_mat_first_row), np.real(F_vector), N) +
               fourier_mult_3d(-1.0 * np.imag(C_mat_first_row), np.imag(F_vector), N)) + \
@@ -252,6 +252,7 @@ def dot_complex(vec1, vec2):
 
 
 
+@nb.jit(forceobj=True, fastmath=True)
 def TwoSGD_fourier(matrix_A, vector_f, Nf, eps=10e-7, n_iter=10000):
     vector_u0 = np.ones(matrix_A.shape[0])
     vector_u1 = vector_u0
@@ -276,7 +277,7 @@ def TwoSGD_fourier(matrix_A, vector_f, Nf, eps=10e-7, n_iter=10000):
 
     vector_u2 = vector_u1
 
-    for iter in range(n_iter):
+    for iter in nb.prange(n_iter):
         vector_r1 = fourier_mult_3d_complex(matrix_A, vector_u1, Nf) - vector_f
 
         delta_r = vector_r1 - vector_r0  # Разница между невязками
@@ -339,7 +340,7 @@ if __name__ == "__main__":
     vector_U0 = -1.0 * fourier_mult_3d_complex(coeffs, f, conf.n_x)
     print("vector U0 completed")
 
-    Ul, m = TwoSGD_fourier(matrix_A=A, vector_f=vector_U0, Nf=conf.n_x, eps=10e-4)
+    Ul, m = TwoSGD_fourier(matrix_A=A, vector_f=vector_U0, Nf=conf.n_x, eps=10e-7)
     print("Iterations completed")
 
     plot_cube_scatter3d(vector_U=np.real(Ul),
