@@ -399,15 +399,19 @@ if __name__ == "__main__":
                                  N=conf.n_x, h=h)
     print("Coeffs completed")
 
-    A = - conf.k * conf.k * coeffs
-    A[0] = A[0] + (1.0 + 0.0j)
+    # A = - conf.k * conf.k * coeffs
+    # A[0] = A[0] + (1.0 + 0.0j)
     f = free_func_stat(x=collocations, k=conf.k, E0=conf.E0, direction=conf.orientation)
     print("F vector completed")
 
     vector_U0 = -1.0 * fourier_mult_3d_complex(coeffs, f, conf.n_x)
     print("vector U0 completed")
 
-    Ul, m = TwoSGD_fourier(matrix_A=A, vector_f=vector_U0, Nf=conf.n_x, eps=10e-7)
+    # Ul, m = TwoSGD_fourier(matrix_A=A, vector_f=vector_U0, Nf=conf.n_x, eps=10e-7)
+    # print("Iterations completed")
+
+    n_refr = np.ones((coeffs.shape[0]))
+    Ul, m = BiCGStab_fourier_refr(coeffs, vector_U0, n_refr, conf.n_x)
     print("Iterations completed")
 
     plot_cube_scatter3d(vector_U=np.real(Ul),

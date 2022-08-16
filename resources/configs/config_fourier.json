@@ -1,6 +1,6 @@
 {
   "directory": "../resources/test_stat_fourier_8",
-  "N": 30,
+  "N": 15,
   "L": 2.0,
   "k": 15,
   "E0": 1.0,
