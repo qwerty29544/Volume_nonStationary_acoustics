@@ -321,11 +321,25 @@ def free_func_stat(x, k, E0=1.0, direction=np.array([1., 0., 0.])):
 
 
 @nb.jit(fastmath=True, parallel=True)
-def n_refr_exp(x, mean=0.0, sdiv=0.5, level=1.0):
-    return (level +
-            (1/np.sqrt(2 * np.pi * sdiv)) *
-            np.exp(-((np.sqrt(x.dot(x)) - mean) ** 2)/
-                   (4 * sdiv * sdiv)))
+def n_refr_exp(x, mean=0.0, sdiv=0.2, level=1.0):
+    n_refr = np.zeros(x.shape[0])
+    for iter in nb.prange(x.shape[0]):
+        n_refr[iter] = (level +
+                        (1/sdiv) *
+                        np.exp(-((np.sqrt(x[iter].dot(x[iter])) - mean) ** 2)/
+                        (4 * sdiv * sdiv)))
+    return n_refr
+
+
+@nb.jit(fastmath=True, parallel=True, forceobj=True)
+def n_refr_step(x, low=-0.4, high=0, refr_coeff=10.0):
+    refr = np.zeros(x.shape[0]) + 1j * np.zeros(x.shape[0])
+    for iter in range(refr.shape[0]):
+        if (x[iter, 0] < high) and (x[iter, 0] > low):
+            refr[iter] = refr_coeff + 1j * refr_coeff
+        else:
+            refr[iter] = 1.0 + 1.0j
+    return refr
 
 
 @nb.jit(fastmath=True)
@@ -410,7 +424,9 @@ if __name__ == "__main__":
     # Ul, m = TwoSGD_fourier(matrix_A=A, vector_f=vector_U0, Nf=conf.n_x, eps=10e-7)
     # print("Iterations completed")
 
-    n_refr = np.ones((coeffs.shape[0]))
+    n_refr = n_refr_step(collocations)
+    print("N refr completed")
+
     Ul, m = BiCGStab_fourier_refr(coeffs, vector_U0, n_refr, conf.n_x)
     print("Iterations completed")
 
