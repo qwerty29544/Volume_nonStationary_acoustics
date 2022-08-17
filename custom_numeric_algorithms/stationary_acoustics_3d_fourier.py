@@ -332,13 +332,23 @@ def n_refr_exp(x, mean=0.0, sdiv=0.2, level=1.0):
 
 
 @nb.jit(fastmath=True, parallel=True, forceobj=True)
-def n_refr_step(x, low=-0.4, high=0, refr_coeff=10.0):
+def n_refr_step(x, low=-0.2, high=0.2, refr_coeff=0.0):
     refr = np.zeros(x.shape[0]) + 1j * np.zeros(x.shape[0])
     for iter in range(refr.shape[0]):
         if (x[iter, 0] < high) and (x[iter, 0] > low):
             refr[iter] = refr_coeff + 1j * refr_coeff
         else:
-            refr[iter] = 1.0 + 1.0j
+            refr[iter] = 1.0 + 0.0j
+    return refr
+
+
+@nb.jit(fastmath=True, parallel=True)
+def n_refr_linear(x_colloc, L=0.5, k = 2.0):
+    refr = np.zeros(x_colloc.shape[0]) + 1j * np.zeros(x_colloc.shape[0])
+    b = 0.5
+    a = -1.0/L
+    for iter in nb.prange(refr.shape[0]):
+        refr[iter] = a * np.abs(x_colloc[iter, 0]) + b
     return refr
 
 
