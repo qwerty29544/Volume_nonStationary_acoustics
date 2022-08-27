@@ -351,6 +351,19 @@ def n_refr_linear(x_colloc, L=0.5, k = 2.0):
         refr[iter] = a * np.abs(x_colloc[iter, 0]) + b
     return refr
 
+@nb.jit(fastmath=True, parallel=True)
+def n_refr_bound(x_colloc, L = 2.0, level = 1.5):
+    n_refr = level * np.ones(x_colloc.shape[0]) + level * 1j * np.ones(x_colloc.shape[0])
+    for i in nb.prange(x_colloc.shape[0]):
+        if np.abs(x_colloc[i, 0]) < L / 2 and np.abs(x_colloc[i, 0]) >= L / 4:
+            n_refr[i] = level * 2
+        elif np.abs(x_colloc[i, 0]) < L / 4 and np.abs(x_colloc[i, 0]) >= L / 8:
+            n_refr[i] = level * 4
+        elif np.abs(x_colloc[i, 0]) < L / 8:
+            n_refr[i] = level * 10
+
+    return n_refr
+
 
 @nb.jit(fastmath=True)
 def complex_dot1(complex_vec1, complex_vec2):
@@ -434,7 +447,8 @@ if __name__ == "__main__":
     # Ul, m = TwoSGD_fourier(matrix_A=A, vector_f=vector_U0, Nf=conf.n_x, eps=10e-7)
     # print("Iterations completed")
 
-    n_refr = n_refr_step(collocations)
+    n_refr = n_refr_bound(collocations, conf.L/2, 10.0)
+    #n_refr = np.ones(collocations.shape[0])
     print("N refr completed")
 
     Ul, m = BiCGStab_fourier_refr(coeffs, vector_U0, n_refr, conf.n_x)
