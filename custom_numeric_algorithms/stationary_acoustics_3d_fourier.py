@@ -176,7 +176,7 @@ def mean_numba(a, coords=3):
 
 @nb.jit(forceobj=True)
 def slicing_integrals(beh_point_num, colloc_point_num, cubes_collocations,
-                      kernel_func, h, N_samples):
+                      kernel_func, h, N_samples, k):
     dv = (h / N_samples) ** 3
     shape_c = cube_shape(center_point=cubes_collocations[beh_point_num],
                          hwl_lengths=np.array([h, h, h]),
@@ -192,13 +192,13 @@ def slicing_integrals(beh_point_num, colloc_point_num, cubes_collocations,
         points = mean_numba(shape_c)
     colloc_point = cubes_collocations[colloc_point_num]
     square = kernel_func(colloc_point[0], colloc_point[1], colloc_point[2],
-                         points[:, 0], points[:, 1], points[:, 2]) * dv
+                         points[:, 0], points[:, 1], points[:, 2], k) * dv
     return np.sum(square)
 
 
 @nb.jit(forceobj=True)
 def slicing_integrals_stat(beh_point_num, colloc_point_num, cubes_collocations,
-                            h, N_samples):
+                            h, N_samples, k):
     dv = (h / N_samples) ** 3
     shape_c = cube_shape(center_point=cubes_collocations[beh_point_num],
                          hwl_lengths=np.array([h, h, h]),
@@ -214,12 +214,12 @@ def slicing_integrals_stat(beh_point_num, colloc_point_num, cubes_collocations,
         points = mean_numba(shape_c)
     colloc_point = cubes_collocations[colloc_point_num]
     square = kernel_stat(colloc_point[0], colloc_point[1], colloc_point[2],
-                         points[:, 0], points[:, 1], points[:, 2]) * dv
+                         points[:, 0], points[:, 1], points[:, 2], k) * dv
     return np.sum(square)
 
 
 @nb.jit()
-def compute_coeffs(kernel, cubes_collocations, N, h):
+def compute_coeffs(kernel, cubes_collocations, N, h, k):
     core_coeffs = np.zeros((N * N * N, N * N * N),)
     core_coeffs = core_coeffs + 1j * core_coeffs
 
@@ -232,23 +232,25 @@ def compute_coeffs(kernel, cubes_collocations, N, h):
                                                   h=h,
                                                   N_samples=N_samples_func(x=cubes_collocations[q],
                                                                            y=cubes_collocations[p],
-                                                                           h=h))
+                                                                           h=h),
+                                                  k=k)
             core_coeffs[q, p] = core_coeffs[p, q]
     return core_coeffs
 
 
 @nb.jit(fastmath=True, parallel=True, forceobj=True)
-def compute_coeffs_line(cubes_collocations, N, h):
+def compute_coeffs_line(cubes_collocations, N, h, k):
     core_coeffs = np.zeros((N * N * N, )) + 1j * np.zeros((N * N * N, ))
     colloc_point_zero = cubes_collocations[0]
     for p in nb.prange(N * N * N):
         colloc_point_p = cubes_collocations[p]
         N_samp = N_samples_func(x=colloc_point_zero, y=colloc_point_p, h=h)
         core_coeffs[p] = slicing_integrals_stat(beh_point_num=0,
-                                           colloc_point_num=p,
-                                           cubes_collocations=cubes_collocations,
-                                           h=h,
-                                           N_samples=N_samp)
+                                                colloc_point_num=p,
+                                                cubes_collocations=cubes_collocations,
+                                                h=h,
+                                                N_samples=N_samp,
+                                                k=k)
     return core_coeffs
 
 
@@ -276,7 +278,7 @@ def TwoSGD_fourier(matrix_A, vector_f, Nf, eps=10e-7, n_iter=10000):
     delta_u = vector_u1 - vector_u0
     k = 3
 
-    delt_eps = dot_complex(delta_u, delta_u) / dot_complex(vector_f, vector_f)
+    delt_eps = np.sqrt(dot_complex(delta_u, delta_u)) / np.sqrt(dot_complex(vector_f, vector_f))
     print(f"n_iterations = {k}, delt_eps = {delt_eps}")
     if (delt_eps < eps):
         return vector_u1, k
@@ -352,17 +354,8 @@ def n_refr_linear(x_colloc, L=0.5, k = 2.0):
     return refr
 
 @nb.jit(fastmath=True, parallel=True)
-def n_refr_bound(x_colloc, L = 2.0, level = 1.5):
-    n_refr = level * np.ones(x_colloc.shape[0]) + level * 1j * np.ones(x_colloc.shape[0])
-    for i in nb.prange(x_colloc.shape[0]):
-        if np.abs(x_colloc[i, 0]) < L / 2 and np.abs(x_colloc[i, 0]) >= L / 4:
-            n_refr[i] = level * 2
-        elif np.abs(x_colloc[i, 0]) < L / 4 and np.abs(x_colloc[i, 0]) >= L / 8:
-            n_refr[i] = level * 4
-        elif np.abs(x_colloc[i, 0]) < L / 8:
-            n_refr[i] = level * 10
-
-    return n_refr
+def n_refr_bound(x_colloc, L=2.0, level=1.5):
+    return (x_colloc[:, 0] < L/4) * (x_colloc[:, 0] > -L/4) * (level + 1j * level) + 1 + 0j
 
 
 @nb.jit(fastmath=True)
@@ -375,24 +368,36 @@ def complex_dot2(complex_vec1, complex_vec2):
     return complex_vec1.dot(complex_vec2)
 
 
+@nb.jit(fastmath=True)
+def dot_complex(vec_a, vec_b):
+    return np.real(vec_a.dot(np.conj(vec_b)))
+
+
+@nb.jit(fastmath=True)
+def vec_norm_2(vec_a):
+    return dot_complex(vec_a, vec_a)
+
 @nb.jit(fastmath=True, forceobj=True)
 def BiCGStab_fourier_refr(A, f, n_refr, Nf,
-                          vector_u0 = None,
+                          vector_u0=None,
                           eps=10e-7,
                           max_iter=10000):
     if vector_u0 is None:
         vector_u0 = np.ones(A.shape[0])
 
-    r_0 = f - vector_u0 + fourier_mult_3d_complex(A, n_refr * vector_u0, Nf)
+    vec_f_norm = np.sqrt(vec_norm_2(f))
+    delta_u_norm = []
+    iters = []
+
+    r_0 = f - (vector_u0 - fourier_mult_3d_complex(A, n_refr * vector_u0, Nf))
     r_tild = r_0
     rho_0 = 1
     alpha_0 = 1
     omega_0 = 1
     v_0 = np.zeros(A.shape[0])
     p_0 = np.zeros(A.shape[0])
-    k = 0
+    k = 1
     vector_u = np.ones(A.shape[0])
-
     for iter in nb.prange(max_iter):
         rho = complex_dot1(r_tild, r_0)
         beta = (rho / rho_0) * (alpha_0 / omega_0)
@@ -405,10 +410,16 @@ def BiCGStab_fourier_refr(A, f, n_refr, Nf,
         vector_u = vector_u0 + omega * s + alpha * p
         r = s - omega * t
         k += 2
-        delta_eps = dot_complex(r, r) / dot_complex(f, f)
+
+        delta_u = np.sqrt(vec_norm_2(vector_u - vector_u0))
+        delta_eps = delta_u / vec_f_norm
+        delta_u_norm.append(delta_eps)
+        iters.append(k)
         print(f"n_iterations = {k}, delt_eps = {delta_eps}")
+
         if delta_eps < eps:
             break
+
         vector_u0 = vector_u
         rho_0 = rho
         r_0 = r
@@ -416,8 +427,8 @@ def BiCGStab_fourier_refr(A, f, n_refr, Nf,
         v_0 = v
         omega_0 = omega
         p_0 = p
+    return vector_u, k, delta_u_norm, iters
 
-    return vector_u, k
 
 if __name__ == "__main__":
     conf = JsonConfig_stat("../resources/configs/config_fourier.json")
@@ -433,7 +444,7 @@ if __name__ == "__main__":
     h = collocations[1, 1] - collocations[0, 1]
 
     coeffs = compute_coeffs_line(cubes_collocations=collocations,
-                                 N=conf.n_x, h=h)
+                                 N=conf.n_x, h=h, k=conf.k)
     print("Coeffs completed")
 
     # A = - conf.k * conf.k * coeffs
@@ -447,13 +458,22 @@ if __name__ == "__main__":
     # Ul, m = TwoSGD_fourier(matrix_A=A, vector_f=vector_U0, Nf=conf.n_x, eps=10e-7)
     # print("Iterations completed")
 
-    n_refr = n_refr_bound(collocations, conf.L/2, 10.0)
-    #n_refr = np.ones(collocations.shape[0])
+    n_refr = n_refr_bound(collocations, conf.L/2, 1.5)
     print("N refr completed")
 
-    Ul, m = BiCGStab_fourier_refr(coeffs, vector_U0, n_refr, conf.n_x)
+    vector_begin = None
+    if conf.seed is not None:
+        np.random.seed(conf.seed)
+        vector_begin = np.random.uniform(-1/conf.n_x, 1/conf.n_x, vector_U0.shape[0])
+
+    Ul, m, history_delta, history_iters = BiCGStab_fourier_refr(coeffs * conf.k**2, vector_U0, n_refr - 1, conf.n_x, vector_begin, eps=10e-5)
     print("Iterations completed")
 
+    plot_cube_scatter3d(vector_U=np.abs(Ul),
+                        cubes_collocations=collocations,
+                        filename_opt=conf.dir_path_cubes + "/cube_scatter_abs_3d_" +
+                                     str(conf.n_x) + "_NO_" + str(conf.exp_no) + ".png",
+                        title_opt=f"Absolute value of U, N = {conf.n_x}, k = {conf.k}, l = {conf.L}")
     plot_cube_scatter3d(vector_U=np.real(Ul),
                         cubes_collocations=collocations,
                         filename_opt=conf.dir_path_cubes + "/cube_scatter_real_3d_" +
@@ -472,12 +492,16 @@ if __name__ == "__main__":
                        filename_opt=conf.dir_path_slices + "/slices_scatter_imag_3d_" +
                                     str(conf.n_x) + "_NO_" + str(conf.exp_no) + ".png")
 
-    plot_density_slices3d(vector_U=np.real(Ul), N_discr=conf.n_x,
+    plot_density_slices3d(x_collocs=np.unique(collocations[:, 0]), y_collocs=np.unique(collocations[:, 1]), vector_U=np.real(Ul), N_discr=conf.n_x,
                           filename_opt=conf.dir_path_slices + "/slices_density_real_3d_" +
                                     str(conf.n_x) + "_NO_" + str(conf.exp_no) + ".png")
-    plot_density_slices3d(vector_U=np.imag(Ul), N_discr=conf.n_x,
+    plot_density_slices3d(x_collocs=np.unique(collocations[:, 0]), y_collocs=np.unique(collocations[:, 1]), vector_U=np.imag(Ul), N_discr=conf.n_x,
                           filename_opt=conf.dir_path_slices + "/slices_density_imag_3d_" +
                                     str(conf.n_x) + "_NO_" + str(conf.exp_no) + ".png")
 
 
     conf.save_file_results(Ul, iterations=m)
+
+    save_np_file_txt(np.array(history_delta), conf.dir_path_output + "history_delta.txt")
+    save_np_file_txt(np.array(history_iters), conf.dir_path_output + "history_iters.txt")
+    save_np_file_txt((Ul - fourier_mult_3d_complex(coeffs*conf.k**2, Ul * (n_refr-1)) - vector_U0), conf.dir_path_output + "history_last.txt")

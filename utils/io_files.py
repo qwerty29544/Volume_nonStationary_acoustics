@@ -25,6 +25,7 @@ class JsonConfig_stat:
             self.k = self.config_dict.get("k")
             self.E0 = self.config_dict.get("E0")
             self.exp_no = self.config_dict.get("experiment_number")
+            self.seed = self.config_dict.get("seed")
 
             self.__create_dir()
 

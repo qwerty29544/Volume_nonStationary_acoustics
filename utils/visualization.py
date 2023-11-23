@@ -88,7 +88,7 @@ def plot_cube_slices3d(vector_U, N_discr=10,
         return 1
 
 
-def plot_density_slices3d(vector_U, N_discr=10,
+def plot_density_slices3d(vector_U, x_collocs, y_collocs, N_discr=10,
                           filename_opt="rhoo.png",
                           xlabel_opt="X axis",
                           ylabel_opt="Y axis"):
@@ -99,14 +99,14 @@ def plot_density_slices3d(vector_U, N_discr=10,
     mult = N_discr * N_discr
 
     ax1 = fig.add_subplot(131)
-    ax1.contourf(vector_U[:mult].reshape((N_discr, N_discr)), levels=N_discr * 3)
+    ax1.contourf(x_collocs, y_collocs, vector_U[:mult].reshape((N_discr, N_discr)), levels=N_discr * 3)
 
     ax2 = fig.add_subplot(132)
-    ax2.contourf(vector_U[((int(n_midmid) - 1) * mult):(int(n_midmid) * mult)].reshape((N_discr, N_discr)),
+    ax2.contourf(x_collocs, y_collocs, vector_U[((int(n_midmid) - 1) * mult):(int(n_midmid) * mult)].reshape((N_discr, N_discr)),
                  levels=N_discr*3)
 
     ax3 = fig.add_subplot(133)
-    ax3.contourf(vector_U[(int(n_mid) - 1) * mult:(int(n_mid) * mult)].reshape((N_discr, N_discr)),
+    ax3.contourf(x_collocs, y_collocs, vector_U[(int(n_mid) - 1) * mult:(int(n_mid) * mult)].reshape((N_discr, N_discr)),
                  levels=N_discr*3)
 
     plt.xlabel(xlabel_opt)
