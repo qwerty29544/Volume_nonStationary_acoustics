@@ -469,6 +469,13 @@ if __name__ == "__main__":
     Ul, m, history_delta, history_iters = BiCGStab_fourier_refr(coeffs * conf.k**2, vector_U0, n_refr - 1, conf.n_x, vector_begin, eps=10e-5)
     print("Iterations completed")
 
+    conf.save_file_results(Ul, iterations=m)
+
+    save_np_file_txt(np.array(history_delta), conf.dir_path_output + "history_delta.txt")
+    save_np_file_txt(np.array(history_iters), conf.dir_path_output + "history_iters.txt")
+    save_np_file_txt((Ul - fourier_mult_3d_complex(coeffs * conf.k ** 2, Ul * (n_refr - 1), conf.n_x) - vector_U0),
+                     conf.dir_path_output + "history_last.txt")
+
     plot_cube_scatter3d(vector_U=np.abs(Ul),
                         cubes_collocations=collocations,
                         filename_opt=conf.dir_path_cubes + "/cube_scatter_abs_3d_" +
@@ -500,8 +507,3 @@ if __name__ == "__main__":
                                     str(conf.n_x) + "_NO_" + str(conf.exp_no) + ".png")
 
 
-    conf.save_file_results(Ul, iterations=m)
-
-    save_np_file_txt(np.array(history_delta), conf.dir_path_output + "history_delta.txt")
-    save_np_file_txt(np.array(history_iters), conf.dir_path_output + "history_iters.txt")
-    save_np_file_txt((Ul - fourier_mult_3d_complex(coeffs*conf.k**2, Ul * (n_refr-1)) - vector_U0), conf.dir_path_output + "history_last.txt")

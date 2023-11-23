@@ -1,6 +1,6 @@
 {
-  "directory": "../resources/test_stat_fourier_BiCG_fourier_18",
-  "N": 20,
+  "directory": "../resources/test_stat_fourier_BiCG_fourier_20",
+  "N": 25,
   "L": 1.0,
   "k": 15.0,
   "E0": 1.0,
