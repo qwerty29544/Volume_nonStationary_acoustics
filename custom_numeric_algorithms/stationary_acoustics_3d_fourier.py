@@ -79,62 +79,46 @@ def prep_fourier_my_vector(u_vec):
     return u_prep
 
 
-# #@nb.njit(fastmath=True, parallel=True, cache=True)
-@nb.jit(fastmath=True)
-def fourier_mult_1d(A_vec, f_vec, N):
-    # Циркулянтная матрица A:
-    #      |a_{0}   a_{-1}   ..  a_{-N}   |
-    #      |a_{1}   a_{0}    ..  a_{-N+1} |
-    #  A = |............................. |
-    #      |a_{N-1} a_{N-2}  ..  a_{-1}   |
-    #      |a_{N}   a_{N-1}  ..  a_{0}    |
-
-    # A_vec: первая строчка такой матрицы заполненная следующим образом:
-    # A_vec = [a_{0}, a_{-1}, .., a_{-N}, 0, a_{N}, a_{N-1}, .., a_{1}], len(A) = 2N + 2
-    # f_vec = [f_{0}, f_{1}, .., f{N}, 0, 0, .., 0], len(f) = 2N + 2
-
-    with nb.objmode(A_fft='complex128[:]', f_fft='complex128[:]'):
-        A_fft = np.fft.fft(A_vec)
-        f_fft = np.fft.fft(f_vec)
-
-    res_fft = A_fft * f_fft
-
-    with nb.objmode(res='complex128[:]'):
-        res = np.fft.ifft(res_fft)
-
-    return res[:N]
-
-
-#@nb.njit(fastmath=True, parallel=True, cache=True)
-@nb.jit(fastmath=True)
-def fourier_mult_2d(C_first_row, F_vector, N):
-    res = np.empty((N * N,))
-    for row in nb.prange(N):
-        result = np.zeros((N,))
-        for col in nb.prange(N):
-            # (row * N_on_dim):((row + 1) * N_on_dim),(col * N_on_dim):((col + 1) * N_on_dim)
-            result += np.real(fourier_mult_1d(
-                prep_fourier_my_matrix(C_first_row[(np.abs(col - row) * N):((np.abs(col - row) + 1) * N)]),
-                prep_fourier_my_vector(F_vector[(col * N):((col + 1) * N)]),
-                N))
-        res[(row * N):((row + 1) * N)] = result
-    return res
-
-
 #@nb.njit(fastmath=True, cahce=True)
 @nb.jit(fastmath=True, cache=True)
 def fourier_mult_3d(C_matrix_first_row, F_vector, N):
-    block = N * N
-    res = np.empty((N * N * N,))
-    for row in nb.prange(N):
-        result = np.zeros((N * N,))
-        for col in nb.prange(N):
-            result += np.real(
-                fourier_mult_2d(C_matrix_first_row[np.abs(col - row) * block:(np.abs(col - row) + 1) * block],
-                                F_vector[col * block: (col + 1) * block],
-                                N))
-        res[row * block:(row + 1) * block] = result
-    return res
+    C = C_matrix_first_row.reshape((N, N, N), order='C')
+    # Шаг 2: Построение генератора
+    G = np.zeros((2 * N, 2 * N, 2 * N), dtype=complex)
+
+    # Заполнение основной части
+    G[0:N, 0:N, 0:N] = C
+
+    # Заполнение отражений
+    G[N + 1:2 * N, 0:N, 0:N] = C[-1:0:-1, :, :]  # Отражение по первому измерению
+    G[0:N, N + 1:2 * N, 0:N] = C[:, -1:0:-1, :]  # Отражение по второму измерению
+    G[0:N, 0:N, N + 1:2 * N] = C[:, :, -1:0:-1]  # Отражение по третьему измерению
+
+    G[N + 1:2 * N, N + 1:2 * N, 0:N] = C[-1:0:-1, -1:0:-1, :]  # Отражение по первому и второму измерениям
+    G[N + 1:2 * N, 0:N, N + 1:2 * N] = C[-1:0:-1, :, -1:0:-1]  # Отражение по первому и третьему измерениям
+    G[0:N, N + 1:2 * N, N + 1:2 * N] = C[:, -1:0:-1, -1:0:-1]  # Отражение по второму и третьему измерениям
+
+    G[N + 1:2 * N, N + 1:2 * N, N + 1:2 * N] = C[-1:0:-1, -1:0:-1, -1:0:-1]  # Отражение по всем измерениям
+
+    # Шаг 3: Преобразование вектора x
+    X = F_vector.reshape((N, N, N), order='C')
+    X_pad = np.zeros((2 * N, 2 * N, 2 * N), dtype=complex)
+    X_pad[0:N, 0:N, 0:N] = X
+
+    # Шаг 4: FFT
+    F_G = np.fft.fftn(G)
+    F_X = np.fft.fftn(X_pad)
+
+    # Шаг 5: Покомпонентное умножение
+    F_Y = F_G * F_X
+
+    # Шаг 6: Обратное FFT
+    Y_pad = np.fft.ifftn(F_Y)
+
+    # Шаг 7: Извлечение результата
+    Y = Y_pad[0:N, 0:N, 0:N]
+    y = Y.reshape((N * N * N,))
+    return y
 
 
 #@nb.njit(fastmath=True, cache=True)
@@ -222,7 +206,6 @@ def slicing_integrals_stat(beh_point_num, colloc_point_num, cubes_collocations,
 def compute_coeffs(kernel, cubes_collocations, N, h, k):
     core_coeffs = np.zeros((N * N * N, N * N * N),)
     core_coeffs = core_coeffs + 1j * core_coeffs
-
     for p in nb.prange(N * N * N):
         for q in nb.prange(p, N * N * N):
             core_coeffs[p, q] = slicing_integrals(beh_point_num=q,
@@ -355,7 +338,7 @@ def n_refr_linear(x_colloc, L=0.5, k = 2.0):
 
 @nb.jit(fastmath=True, parallel=True)
 def n_refr_bound(x_colloc, L=2.0, level=1.5):
-    return (x_colloc[:, 0] < L/4) * (x_colloc[:, 0] > -L/4) * (level + 1j * level) + 1 + 0j
+    return (x_colloc[:, 0] < L/4) * (level + 1j * level) + 1 + 0j
 
 
 @nb.jit(fastmath=True)
@@ -459,6 +442,7 @@ if __name__ == "__main__":
     # print("Iterations completed")
 
     n_refr = n_refr_bound(collocations, conf.L/2, 1.5)
+    n_refr = n_refr_bound(collocations, conf.L/4, 2.5)
     print("N refr completed")
 
     vector_begin = None

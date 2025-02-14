@@ -1,11 +1,11 @@
 {
-  "directory": "../resources/test_stat_fourier_BiCG_fourier_20",
-  "N": 25,
-  "L": 1.0,
-  "k": 15.0,
+  "directory": "../resources/test_stat_fourier_BiCG_fourier_124",
+  "N": 100,
+  "L": 2.0,
+  "k": 18.0,
   "E0": 1.0,
   "center_point": [0.0, 0.0, 0.0],
-  "orientation": [-1.0, -1.0, -1.0],
+  "orientation": [-1.0, -1.0, 0.0],
   "seed": 123,
   "experiment_number": 1005
 }
